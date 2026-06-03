@@ -1467,7 +1467,7 @@ function renderPortfolioPage() {
         </div>
 
         <div class="stats-grid portfolio-summary">
-          ${renderMetricCard("Holdings", String(rows.length))}
+          ${renderMetricCard("Holdings", String(rows.length), "", 'data-portfolio-summary-count=""')}
           ${renderMetricCard("Portfolio return", "Loading…", "benchmark-pending", 'data-portfolio-summary-return=""')}
           ${renderMetricCard("Vs S&P", "Loading…", "benchmark-pending", 'data-portfolio-summary-alpha=""')}
         </div>

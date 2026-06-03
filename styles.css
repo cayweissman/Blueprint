@@ -2993,7 +2993,7 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
   .page-portfolio .portfolio-section {
     padding-top: calc(var(--public-nav-top) + var(--public-header-height) + 0.85rem);
     padding-right: var(--public-content-inline-end);
-    padding-bottom: calc(1rem + var(--safe-bottom));
+    padding-bottom: 0;
     padding-left: var(--public-content-inline-start);
   }
 
@@ -3016,6 +3016,7 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
   .page-portfolio .portfolio-card-list {
     display: grid;
     align-content: start;
+    padding-bottom: calc(25px + var(--safe-bottom));
   }
 
   .page-portfolio .portfolio-summary {
@@ -3364,6 +3365,20 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
 
   .snapshot-grid .metric-value {
     font-size: clamp(0.95rem, 4.2vw, 1.25rem);
+  }
+
+  .page-home .section-company .snapshot-grid .stat-label,
+  .page-holding-thesis .holding-thesis-snapshot .snapshot-grid .stat-card:nth-child(-n + 3) .stat-label,
+  .page-portfolio .portfolio-card-metrics > div:nth-child(5) .stat-label {
+    font-size: 0.56rem;
+    letter-spacing: 0.08em;
+  }
+
+  .page-home .section-company .snapshot-grid .metric-value,
+  .page-holding-thesis .holding-thesis-snapshot .snapshot-grid .stat-card:nth-child(-n + 3) .metric-value,
+  .page-portfolio .portfolio-card-meta,
+  .page-portfolio .portfolio-card-metrics > div:nth-child(5) dd {
+    font-size: clamp(0.78rem, 3.2vw, 0.92rem);
   }
 
   .metric-value,

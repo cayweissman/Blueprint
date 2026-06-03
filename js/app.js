@@ -630,34 +630,40 @@ function benchmarkValueClass(value) {
 }
 
 function updateBenchmarkDisplays() {
+  updateCompanyReturnDisplays();
+
   const sp500Return = getSp500SinceInception();
-  const displayValue = formatLiveBenchmarkPercent(sp500Return);
-  const className = benchmarkValueClass(sp500Return);
+  const benchmarkLoading = benchmarkState.loading;
 
   app.querySelectorAll("[data-benchmark-sp500]:not([data-hero-alpha]) .metric-value").forEach((element) => {
-    element.textContent = displayValue;
-    element.className = `metric-value ${className}`.trim();
+    setAnimatedPercent(element, sp500Return, {
+      loading: benchmarkLoading,
+      className: `metric-value ${benchmarkValueClass(sp500Return)}`.trim(),
+    });
   });
 
   app.querySelectorAll("[data-benchmark-sp500-inline]").forEach((element) => {
-    element.textContent = displayValue;
-    element.className = className;
+    setAnimatedPercent(element, sp500Return, {
+      loading: benchmarkLoading,
+      className: benchmarkValueClass(sp500Return),
+    });
   });
 
   app.querySelectorAll("[data-benchmark-alpha] .metric-value").forEach((element) => {
     const alpha = getAlphaVsSp500();
-    element.textContent = formatLiveBenchmarkPercent(alpha);
-    element.className = `metric-value ${benchmarkValueClass(alpha)}`.trim();
+    setAnimatedPercent(element, alpha, {
+      loading: benchmarkLoading,
+      className: `metric-value ${benchmarkValueClass(alpha)}`.trim(),
+    });
   });
 
   app.querySelectorAll("[data-benchmark-alpha-inline]").forEach((element) => {
     const alpha = getAlphaVsSp500();
-    element.textContent = formatLiveBenchmarkPercent(alpha);
-    element.className = benchmarkValueClass(alpha);
+    setAnimatedPercent(element, alpha, {
+      loading: benchmarkLoading,
+      className: benchmarkValueClass(alpha),
+    });
   });
-
-  updateCompanyReturnDisplays();
-  updateHeroMetricsDisplay();
 }
 
 function getCompanyAlphaVsSp500(companyKey) {
@@ -703,44 +709,55 @@ function updatePortfolioPageDisplays() {
   const alpha = getHeroAlphaVsSp500();
 
   const summaryReturn = page.querySelector("[data-portfolio-summary-return] .metric-value");
-  if (summaryReturn) {
-    summaryReturn.textContent = weighted == null ? (loading ? "Loading…" : "—") : formatPercentPrecise(weighted);
-    summaryReturn.className = `metric-value ${weighted == null ? (loading ? "benchmark-pending" : "") : valueClass(weighted)}`.trim();
-  }
+  setAnimatedPercent(summaryReturn, weighted, {
+    loading,
+    className: `metric-value ${weighted == null ? (loading ? "benchmark-pending" : "") : valueClass(weighted)}`.trim(),
+  });
 
   const summaryAlpha = page.querySelector("[data-portfolio-summary-alpha] .metric-value");
-  if (summaryAlpha) {
-    summaryAlpha.textContent = alpha == null ? (loading ? "Loading…" : "—") : formatPercentPrecise(alpha);
-    summaryAlpha.className = `metric-value ${benchmarkValueClass(alpha)}`.trim();
-  }
+  setAnimatedPercent(summaryAlpha, alpha, {
+    loading,
+    className: `metric-value ${benchmarkValueClass(alpha)}`.trim(),
+  });
 
   rows.forEach((row) => {
-    const setCell = (selector, text, className = "") => {
+    const setPriceCell = (selector, value) => {
       page.querySelectorAll(`[${selector}="${row.key}"]`).forEach((element) => {
-        element.textContent = text;
-        if (className) element.className = className;
+        element.textContent = value != null ? formatPrice(value) : loading ? "Loading…" : "—";
       });
     };
 
-    setCell("data-portfolio-start", row.startClose != null ? formatPrice(row.startClose) : loading ? "Loading…" : "—");
-    setCell(
-      "data-portfolio-end",
-      row.endClose != null ? formatPrice(row.endClose) : loading ? "Loading…" : "—",
-      `portfolio-end ${companyReturnValueClass(row.returnPct)}`.trim(),
+    const setPercentCell = (selector, value, className, format = formatPercentPrecise) => {
+      page.querySelectorAll(`[${selector}="${row.key}"]`).forEach((element) => {
+        setAnimatedPercent(element, value, { loading, className, format });
+      });
+    };
+
+    setPriceCell("data-portfolio-start", row.startClose);
+    setPriceCell("data-portfolio-end", row.endClose);
+    page.querySelectorAll(`[data-portfolio-end="${row.key}"]`).forEach((element) => {
+      element.className = `portfolio-end ${companyReturnValueClass(row.returnPct)}`.trim();
+    });
+
+    setPercentCell(
+      "data-portfolio-allocation",
+      row.allocation,
+      "portfolio-allocation",
+      formatAllocation,
     );
-    setCell(
+    setPercentCell(
       "data-portfolio-return",
-      formatCompanyReturnPercent(row.returnPct),
+      row.returnPct,
       `portfolio-return ${companyReturnValueClass(row.returnPct)}`.trim(),
     );
-    setCell(
+    setPercentCell(
       "data-portfolio-alpha",
-      loading && row.alpha == null ? "Loading…" : formatLiveBenchmarkPercent(row.alpha),
+      row.alpha,
       `portfolio-alpha ${benchmarkValueClass(row.alpha)}`.trim(),
     );
-    setCell(
+    setPercentCell(
       "data-portfolio-contribution",
-      row.contribution == null ? (loading ? "Loading…" : "—") : formatPercentPrecise(row.contribution),
+      row.contribution,
       `portfolio-contribution ${row.contribution == null ? (loading ? "benchmark-pending" : "") : valueClass(row.contribution)}`.trim(),
     );
   });
@@ -833,22 +850,38 @@ function companyReturnValueClass(value) {
 }
 
 function updateCompanyReturnDisplays() {
+  cleanupPercentAnimations();
+
+  const loading = companyReturnsState.loading || benchmarkState.loading;
+
   app.querySelectorAll("[data-company-return]").forEach((element) => {
     const key = element.dataset.companyReturn;
     const returnValue = getCompanyReturn(key);
-
-    element.textContent = formatCompanyReturnPercent(returnValue);
-    element.className = `hero-return company-return ${companyReturnValueClass(returnValue)}`.trim();
+    setAnimatedPercent(element, returnValue, {
+      loading,
+      className: `hero-return company-return ${companyReturnValueClass(returnValue)}`.trim(),
+      wind: true,
+    });
   });
 
   app.querySelectorAll("[data-company-alpha] .metric-value").forEach((element) => {
     const card = element.closest("[data-company-alpha]");
     const key = card?.dataset.companyAlpha;
     const alpha = key ? getCompanyAlphaVsSp500(key) : null;
-    const loading = companyReturnsState.loading || benchmarkState.loading;
+    setAnimatedPercent(element, alpha, {
+      loading,
+      className: `metric-value ${benchmarkValueClass(alpha)}`.trim(),
+    });
+  });
 
-    element.textContent = loading && alpha == null ? "Loading…" : formatLiveBenchmarkPercent(alpha);
-    element.className = `metric-value ${benchmarkValueClass(alpha)}`.trim();
+  app.querySelectorAll("[data-holding-allocation]").forEach((element) => {
+    const key = element.dataset.holdingAllocation;
+    const allocation = key ? getHoldingAllocation(key) : null;
+    setAnimatedPercent(element, allocation, {
+      className: "hero-return",
+      wind: true,
+      format: formatAllocation,
+    });
   });
 
   updateHeroMetricsDisplay();
@@ -857,37 +890,22 @@ function updateCompanyReturnDisplays() {
 }
 
 function updateHeroMetricsDisplay() {
-  cleanupHeroMetricsAnimations();
-
   const returnElement = app.querySelector(".section-hero [data-hero-since-inception]");
   const alphaElement = app.querySelector(".section-hero [data-hero-alpha] .metric-value");
   const loading = companyReturnsState.loading || benchmarkState.loading;
   const weighted = getWeightedPortfolioReturn();
   const alpha = getHeroAlphaVsSp500();
 
-  if (returnElement) {
-    if (weighted == null) {
-      returnElement.dataset.returnTarget = "0";
-      returnElement.textContent = loading ? "Loading…" : "—";
-      returnElement.className = `hero-return ${loading ? "benchmark-pending" : ""}`.trim();
-    } else {
-      returnElement.dataset.returnTarget = String(weighted);
-      returnElement.className = `hero-return ${valueClass(weighted)}`;
-      heroMetricsAnimationCleanups.push(runCountUpAnimation(returnElement, weighted, { wind: true }));
-    }
-  }
+  setAnimatedPercent(returnElement, weighted, {
+    loading,
+    className: weighted == null ? `hero-return ${loading ? "benchmark-pending" : ""}`.trim() : `hero-return ${valueClass(weighted)}`.trim(),
+    wind: true,
+  });
 
-  if (alphaElement) {
-    if (alpha == null) {
-      alphaElement.dataset.returnTarget = "0";
-      alphaElement.textContent = loading ? "Loading…" : "—";
-      alphaElement.className = `metric-value ${loading ? "benchmark-pending" : ""}`.trim();
-    } else {
-      alphaElement.dataset.returnTarget = String(alpha);
-      alphaElement.className = `metric-value ${valueClass(alpha)}`;
-      heroMetricsAnimationCleanups.push(runCountUpAnimation(alphaElement, alpha));
-    }
-  }
+  setAnimatedPercent(alphaElement, alpha, {
+    loading,
+    className: `metric-value ${alpha == null ? (loading ? "benchmark-pending" : "") : valueClass(alpha)}`.trim(),
+  });
 }
 
 async function fetchLiveCompanyReturns() {
@@ -1203,7 +1221,7 @@ function renderMetricCard(label, value, className = "", cardAttrs = "", hint = "
   `;
 }
 
-function renderHomePrimaryMetrics(returnMarkup, allocationWeight) {
+function renderHomePrimaryMetrics(returnMarkup, allocationWeight, holdingKey = "") {
   return `
     <div class="home-primary-metrics">
       <div>
@@ -1212,7 +1230,7 @@ function renderHomePrimaryMetrics(returnMarkup, allocationWeight) {
       </div>
       <div>
         <div class="muted">Allocation</div>
-        <div class="hero-return">${escapeHtml(formatAllocation(allocationWeight))}</div>
+        <div class="hero-return"${holdingKey ? ` data-holding-allocation="${escapeHtml(holdingKey)}"` : ""}>${escapeHtml(formatAllocation(allocationWeight))}</div>
       </div>
     </div>
   `;
@@ -1368,9 +1386,9 @@ function renderHomePage() {
                     >Loading…</div>
                   `,
                     getHoldingAllocation(company.key),
+                    company.key,
                   )}
                   <div class="snapshot-grid">
-                    ${renderMetricCard("Category", meta.category)}
                     ${renderMetricCard("Ticker", meta.ticker)}
                     ${renderMetricCard("vs S&P", "Loading…", "benchmark-pending", `data-company-alpha="${escapeHtml(company.key)}"`)}
                   </div>
@@ -1399,7 +1417,7 @@ function renderPortfolioListRow(row) {
         <a href="/" data-link data-portfolio-home-link="${escapeHtml(row.key)}" class="portfolio-company-link">${escapeHtml(row.name)}</a>
       </td>
       <td><span class="tag">${escapeHtml(row.ticker)}</span></td>
-      <td>${escapeHtml(formatAllocation(row.allocation))}</td>
+      <td data-portfolio-allocation="${escapeHtml(row.key)}" class="portfolio-allocation">${escapeHtml(formatAllocation(row.allocation))}</td>
       <td data-portfolio-start="${escapeHtml(row.key)}">${row.startClose != null ? formatPrice(row.startClose) : loading ? "Loading…" : "—"}</td>
       <td data-portfolio-end="${escapeHtml(row.key)}" class="portfolio-end ${companyReturnValueClass(row.returnPct)}">${row.endClose != null ? formatPrice(row.endClose) : loading ? "Loading…" : "—"}</td>
       <td data-portfolio-return="${escapeHtml(row.key)}" class="portfolio-return ${companyReturnValueClass(row.returnPct)}">${formatCompanyReturnPercent(row.returnPct)}</td>
@@ -1424,7 +1442,7 @@ function renderPortfolioCard(row) {
       <dl class="portfolio-card-metrics">
         <div>
           <dt class="stat-label">Allocation</dt>
-          <dd>${escapeHtml(formatAllocation(row.allocation))}</dd>
+          <dd data-portfolio-allocation="${escapeHtml(row.key)}" class="portfolio-allocation">${escapeHtml(formatAllocation(row.allocation))}</dd>
         </div>
         <div>
           <dt class="stat-label">Inception</dt>
@@ -1512,17 +1530,16 @@ function updateHoldingDetailPageDisplays() {
 
   const loading = companyReturnsState.loading || benchmarkState.loading;
 
-  const returnEl = page.querySelector("[data-holding-return]");
-  if (returnEl) {
-    returnEl.textContent = formatCompanyReturnPercent(holding.returnPct);
-    returnEl.className = `hero-return company-return ${companyReturnValueClass(holding.returnPct)}`.trim();
-  }
+  setAnimatedPercent(page.querySelector("[data-holding-return]"), holding.returnPct, {
+    loading,
+    className: `hero-return company-return ${companyReturnValueClass(holding.returnPct)}`.trim(),
+    wind: true,
+  });
 
-  const alphaEl = page.querySelector("[data-holding-alpha] .metric-value");
-  if (alphaEl) {
-    alphaEl.textContent = loading && holding.alpha == null ? "Loading…" : formatLiveBenchmarkPercent(holding.alpha);
-    alphaEl.className = `metric-value ${benchmarkValueClass(holding.alpha)}`.trim();
-  }
+  setAnimatedPercent(page.querySelector("[data-holding-alpha] .metric-value"), holding.alpha, {
+    loading,
+    className: `metric-value ${benchmarkValueClass(holding.alpha)}`.trim(),
+  });
 
   const startEl = page.querySelector("[data-holding-start] .metric-value");
   if (startEl) {
@@ -1535,13 +1552,10 @@ function updateHoldingDetailPageDisplays() {
     endEl.className = `metric-value portfolio-end ${companyReturnValueClass(holding.returnPct)}`.trim();
   }
 
-  const contributionEl = page.querySelector("[data-holding-contribution] .metric-value");
-  if (contributionEl) {
-    contributionEl.textContent =
-      holding.contribution == null ? (loading ? "Loading…" : "—") : formatPercentPrecise(holding.contribution);
-    contributionEl.className =
-      `metric-value portfolio-contribution ${holding.contribution == null ? (loading ? "benchmark-pending" : "") : valueClass(holding.contribution)}`.trim();
-  }
+  setAnimatedPercent(page.querySelector("[data-holding-contribution] .metric-value"), holding.contribution, {
+    loading,
+    className: `metric-value portfolio-contribution ${holding.contribution == null ? (loading ? "benchmark-pending" : "") : valueClass(holding.contribution)}`.trim(),
+  });
 }
 
 function renderHoldingDetailPage(ticker) {
@@ -1574,6 +1588,7 @@ function renderHoldingDetailPage(ticker) {
               >${escapeHtml(formatCompanyReturnPercent(holding.returnPct))}</div>
             `,
               holding.allocation,
+              holding.key,
             )}
             <div class="snapshot-grid">
               ${renderMetricCard("Category", holding.category)}
@@ -2208,11 +2223,39 @@ function renderPage(route) {
 }
 
 let publicScrollCleanup = null;
-let heroMetricsAnimationCleanups = [];
+let percentAnimationCleanups = [];
+
+function cleanupPercentAnimations() {
+  percentAnimationCleanups.forEach((cleanup) => cleanup());
+  percentAnimationCleanups = [];
+}
 
 function cleanupHeroMetricsAnimations() {
-  heroMetricsAnimationCleanups.forEach((cleanup) => cleanup());
-  heroMetricsAnimationCleanups = [];
+  cleanupPercentAnimations();
+}
+
+function setAnimatedPercent(element, value, options = {}) {
+  const {
+    loading = false,
+    className = element?.className || "",
+    wind = null,
+    format = formatPercentPrecise,
+  } = options;
+
+  if (!element) return;
+
+  const useWind = wind ?? element.classList.contains("hero-return");
+
+  if (value == null) {
+    element.textContent = loading ? "Loading…" : "—";
+    if (className) element.className = className.trim();
+    element.dataset.returnTarget = "0";
+    return;
+  }
+
+  if (className) element.className = className.trim();
+  element.dataset.returnTarget = String(value);
+  percentAnimationCleanups.push(runCountUpAnimation(element, value, { wind: useWind, format }));
 }
 
 function cleanupPublicScrollExperience() {
@@ -2358,12 +2401,7 @@ function cleanupHeroReturnAnimation() {
   cleanupHeroMetricsAnimations();
 }
 
-function formatHeroPercent(value) {
-  const prefix = value > 0 ? "+" : "";
-  return `${prefix}${value.toFixed(2)}%`;
-}
-
-function runCountUpAnimation(element, target, { wind = false } = {}) {
+function runCountUpAnimation(element, target, { wind = false, format = formatPercentPrecise } = {}) {
   if (!element || target == null || Number.isNaN(target)) {
     return () => {};
   }
@@ -2375,7 +2413,7 @@ function runCountUpAnimation(element, target, { wind = false } = {}) {
 
   element.classList.toggle("hero-return--counting", wind);
   element.classList.toggle("metric-value--counting", !wind);
-  element.textContent = formatHeroPercent(0);
+  element.textContent = format(0);
 
   const start = performance.now();
 
@@ -2384,14 +2422,14 @@ function runCountUpAnimation(element, target, { wind = false } = {}) {
 
     const progress = Math.min((now - start) / duration, 1);
     const value = target * easeOutCubic(progress);
-    element.textContent = formatHeroPercent(value);
+    element.textContent = format(value);
 
     if (progress < 1) {
       rafId = requestAnimationFrame(tick);
       return;
     }
 
-    element.textContent = formatHeroPercent(target);
+    element.textContent = format(target);
     element.classList.remove("hero-return--counting", "metric-value--counting");
   };
 
@@ -2405,6 +2443,7 @@ function runCountUpAnimation(element, target, { wind = false } = {}) {
 }
 
 function setupHeroReturnAnimation() {
+  cleanupPercentAnimations();
   updateHeroMetricsDisplay();
 }
 

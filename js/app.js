@@ -758,7 +758,7 @@ async function fetchWithTimeout(url, timeoutMs = 15000) {
 }
 
 async function fetchLiveSp500Return() {
-  const sources = [sitePath("/api/sp500-since-launch"), sitePath("/api/sp500-since-launch.json")];
+  const sources = [sitePath("/api/sp500-since-launch.json")];
 
   for (const url of sources) {
     try {
@@ -891,7 +891,7 @@ function updateHeroMetricsDisplay() {
 }
 
 async function fetchLiveCompanyReturns() {
-  const sources = [sitePath("/api/holdings-since-launch"), sitePath("/api/holdings-since-launch.json")];
+  const sources = [sitePath("/api/holdings-since-launch.json")];
 
   for (const url of sources) {
     try {

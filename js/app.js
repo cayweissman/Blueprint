@@ -1048,7 +1048,7 @@ let mobileNavCleanup = null;
 let heroVantaResizeCleanup = null;
 
 function isMobileLayout() {
-  return window.matchMedia("(max-width: 1210px)").matches;
+  return window.matchMedia("(max-width: 1220px)").matches;
 }
 
 function getPublicHeaderOffset() {
@@ -1109,7 +1109,7 @@ function setupMobileNav() {
   document.addEventListener("click", onDocumentClick);
   document.addEventListener("keydown", onKeyDown);
 
-  const mobileQuery = window.matchMedia("(max-width: 1210px)");
+  const mobileQuery = window.matchMedia("(max-width: 1220px)");
   const onMobileQueryChange = (event) => {
     if (!event.matches) closeMobileNav();
   };

@@ -2995,7 +2995,7 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
   border-top: 1px solid rgba(244, 247, 251, 0.12);
 }
 
-@media (max-width: 1210px) {
+@media (max-width: 1220px) {
   .page-portfolio .portfolio-section {
     padding-top: calc(var(--public-nav-top) + var(--public-header-height) + 0.85rem);
     padding-right: var(--public-content-inline-end);
@@ -3089,7 +3089,7 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
 
-@media (max-width: 1210px) {
+@media (max-width: 1220px) {
   :root {
     --public-header-offset: 4rem;
     --public-nav-top: calc(1rem + var(--safe-top));

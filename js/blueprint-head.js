@@ -14,7 +14,7 @@
     return base ? `${base}${normalized}` : normalized;
   }
 
-  const cacheVersion = document.currentScript?.dataset?.cache || "20260602-105";
+  const cacheVersion = document.currentScript?.dataset?.cache || "20260602-106";
 
   const stylesheet = document.createElement("link");
   stylesheet.rel = "stylesheet";

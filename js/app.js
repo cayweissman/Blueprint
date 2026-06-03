@@ -721,41 +721,36 @@ function updatePortfolioPageDisplays() {
   });
 
   rows.forEach((row) => {
-    const setPriceCell = (selector, value) => {
-      page.querySelectorAll(`[${selector}="${row.key}"]`).forEach((element) => {
-        element.textContent = value != null ? formatPrice(value) : loading ? "Loading…" : "—";
-      });
-    };
-
-    const setPercentCell = (selector, value, className, format = formatPercentPrecise) => {
+    const setMetricCell = (selector, value, className = "", format = formatPercentPrecise) => {
       page.querySelectorAll(`[${selector}="${row.key}"]`).forEach((element) => {
         setAnimatedPercent(element, value, { loading, className, format });
       });
     };
 
-    setPriceCell("data-portfolio-start", row.startClose);
-    setPriceCell("data-portfolio-end", row.endClose);
-    page.querySelectorAll(`[data-portfolio-end="${row.key}"]`).forEach((element) => {
-      element.className = `portfolio-end ${companyReturnValueClass(row.returnPct)}`.trim();
-    });
-
-    setPercentCell(
+    setMetricCell("data-portfolio-start", row.startClose, "", formatPrice);
+    setMetricCell(
+      "data-portfolio-end",
+      row.endClose,
+      `portfolio-end ${companyReturnValueClass(row.returnPct)}`.trim(),
+      formatPrice,
+    );
+    setMetricCell(
       "data-portfolio-allocation",
       row.allocation,
       "portfolio-allocation",
       formatAllocation,
     );
-    setPercentCell(
+    setMetricCell(
       "data-portfolio-return",
       row.returnPct,
       `portfolio-return ${companyReturnValueClass(row.returnPct)}`.trim(),
     );
-    setPercentCell(
+    setMetricCell(
       "data-portfolio-alpha",
       row.alpha,
       `portfolio-alpha ${benchmarkValueClass(row.alpha)}`.trim(),
     );
-    setPercentCell(
+    setMetricCell(
       "data-portfolio-contribution",
       row.contribution,
       `portfolio-contribution ${row.contribution == null ? (loading ? "benchmark-pending" : "") : valueClass(row.contribution)}`.trim(),
@@ -1545,16 +1540,17 @@ function updateHoldingDetailPageDisplays() {
     className: `metric-value ${benchmarkValueClass(holding.alpha)}`.trim(),
   });
 
-  const startEl = page.querySelector("[data-holding-start] .metric-value");
-  if (startEl) {
-    startEl.textContent = holding.startClose != null ? formatPrice(holding.startClose) : loading ? "Loading…" : "—";
-  }
+  setAnimatedPercent(page.querySelector("[data-holding-start] .metric-value"), holding.startClose, {
+    loading,
+    className: "metric-value",
+    format: formatPrice,
+  });
 
-  const endEl = page.querySelector("[data-holding-end] .metric-value");
-  if (endEl) {
-    endEl.textContent = holding.endClose != null ? formatPrice(holding.endClose) : loading ? "Loading…" : "—";
-    endEl.className = `metric-value portfolio-end ${companyReturnValueClass(holding.returnPct)}`.trim();
-  }
+  setAnimatedPercent(page.querySelector("[data-holding-end] .metric-value"), holding.endClose, {
+    loading,
+    className: `metric-value portfolio-end ${companyReturnValueClass(holding.returnPct)}`.trim(),
+    format: formatPrice,
+  });
 
   setAnimatedPercent(page.querySelector("[data-holding-contribution] .metric-value"), holding.contribution, {
     loading,

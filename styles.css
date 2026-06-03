@@ -2085,7 +2085,8 @@ body.theme-public[data-page]:not([data-page="home"]) .transparent-motion-video {
 .portfolio-return.metric-value--counting,
 .portfolio-alpha.metric-value--counting,
 .portfolio-contribution.metric-value--counting,
-.portfolio-allocation.metric-value--counting {
+.portfolio-allocation.metric-value--counting,
+.portfolio-end.metric-value--counting {
   animation: hero-return-wind 1.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 

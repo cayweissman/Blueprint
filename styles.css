@@ -3021,7 +3021,7 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
   .page-portfolio .portfolio-card-list {
     display: grid;
     align-content: start;
-    padding-bottom: calc(25px + var(--safe-bottom));
+    padding-bottom: calc(10px + var(--safe-bottom));
   }
 
   .page-portfolio .portfolio-summary {

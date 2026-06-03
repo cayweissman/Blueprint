@@ -797,8 +797,11 @@ async function fetchLiveSp500Return() {
 async function refreshLiveBenchmark() {
   if (benchmarkFetchPromise) return benchmarkFetchPromise;
 
-  benchmarkState = { ...benchmarkState, loading: true, error: null };
-  updateBenchmarkDisplays();
+  const hadBenchmark = benchmarkState.sp500Return != null;
+  if (!hadBenchmark) {
+    benchmarkState = { ...benchmarkState, loading: true, error: null };
+    updateBenchmarkDisplays();
+  }
 
   benchmarkFetchPromise = (async () => {
     try {
@@ -850,8 +853,6 @@ function companyReturnValueClass(value) {
 }
 
 function updateCompanyReturnDisplays() {
-  cleanupPercentAnimations();
-
   const loading = companyReturnsState.loading || benchmarkState.loading;
 
   app.querySelectorAll("[data-company-return]").forEach((element) => {
@@ -934,8 +935,11 @@ async function fetchLiveCompanyReturns() {
 async function refreshLiveCompanyReturns() {
   if (companyReturnsFetchPromise) return companyReturnsFetchPromise;
 
-  companyReturnsState = { ...companyReturnsState, loading: true, error: null };
-  updateCompanyReturnDisplays();
+  const hadHoldings = Object.keys(companyReturnsState.holdings).length > 0;
+  if (!hadHoldings) {
+    companyReturnsState = { ...companyReturnsState, loading: true, error: null };
+    updateCompanyReturnDisplays();
+  }
 
   companyReturnsFetchPromise = (async () => {
     try {
@@ -2260,12 +2264,6 @@ function playPendingPercentAnimation(element) {
   unobservePercentElement(element);
   pendingPercentByElement.delete(element);
 
-  if (element.dataset.percentAnimated === String(pending.value)) {
-    element.textContent = pending.format(pending.value);
-    return;
-  }
-
-  element.dataset.percentAnimated = String(pending.value);
   const cleanup = runCountUpAnimation(element, pending.value, {
     wind: pending.wind,
     format: pending.format,
@@ -2301,6 +2299,19 @@ function getPercentObserver(root) {
 }
 
 function queuePercentAnimation(element, value, { wind = false, format = formatPercentPrecise } = {}) {
+  if (!element?.isConnected) return;
+
+  const valueKey = String(value);
+  const pending = pendingPercentByElement.get(element);
+
+  if (element.__percentAnimCleanup && element.dataset.returnTarget === valueKey) {
+    return;
+  }
+
+  if (pending && String(pending.value) === valueKey) {
+    return;
+  }
+
   if (element.__percentAnimCleanup) {
     element.__percentAnimCleanup();
     element.__percentAnimCleanup = null;
@@ -2310,22 +2321,26 @@ function queuePercentAnimation(element, value, { wind = false, format = formatPe
 
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     element.textContent = format(value);
-    element.dataset.percentAnimated = String(value);
+    element.dataset.percentAnimated = valueKey;
+    element.dataset.returnTarget = valueKey;
     return;
   }
 
-  if (element.dataset.percentAnimated !== String(value)) {
-    delete element.dataset.percentAnimated;
-  }
-
-  if (element.dataset.percentAnimated === String(value)) {
+  if (element.dataset.percentAnimated === valueKey) {
     element.textContent = format(value);
+    element.dataset.returnTarget = valueKey;
     return;
   }
 
+  delete element.dataset.percentAnimated;
+  element.dataset.returnTarget = valueKey;
   element.textContent = format(0);
   pendingPercentByElement.set(element, { value, wind, format });
-  getPercentObserver(getPercentScrollRoot(element)).observe(element);
+
+  requestAnimationFrame(() => {
+    if (!element.isConnected || !pendingPercentByElement.has(element)) return;
+    getPercentObserver(getPercentScrollRoot(element)).observe(element);
+  });
 }
 
 function setAnimatedPercent(element, value, options = {}) {
@@ -2532,15 +2547,21 @@ function runCountUpAnimation(element, target, { wind = false, format = formatPer
 
     element.textContent = format(target);
     element.classList.remove("hero-return--counting", "metric-value--counting");
+    element.dataset.percentAnimated = String(target);
   };
 
   rafId = requestAnimationFrame(tick);
 
-  return () => {
+  function cancelAnimation() {
     cancelled = true;
     if (rafId) cancelAnimationFrame(rafId);
     element.classList.remove("hero-return--counting", "metric-value--counting");
-  };
+    if (element.__percentAnimCleanup === cancelAnimation) {
+      element.__percentAnimCleanup = null;
+    }
+  }
+
+  return cancelAnimation;
 }
 
 function setupHeroReturnAnimation() {
@@ -2961,7 +2982,6 @@ function render() {
 
   const route = getRoute();
   cleanupPublicScrollExperience();
-  cleanupHeroReturnAnimation();
   cleanupLiveBenchmark();
   cleanupLiveCompanyReturns();
   if (mobileNavCleanup) {
@@ -2989,6 +3009,7 @@ function render() {
       ${renderFooter()}
     </div>
   `;
+  cleanupPercentAnimations();
   enforcePageMediaPolicy(route);
   setupMobileNav();
 
@@ -2998,20 +3019,12 @@ function render() {
 
   if (route.page === "home" || route.page === "portfolio" || route.page === "holding-detail") {
     setupLiveBenchmark();
-  }
-
-  if (route.page === "home" || route.page === "portfolio" || route.page === "holding-detail") {
     setupLiveCompanyReturns();
-    if (route.page === "home") {
-      updateHeroMetricsDisplay();
-    } else if (route.page === "portfolio") {
-      updatePortfolioPageDisplays();
-      void Promise.all([refreshLiveCompanyReturns(), refreshLiveBenchmark()]).then(() => {
-        if (document.body.dataset.page === "portfolio") updatePortfolioPageDisplays();
-      });
-    } else {
-      updateHoldingDetailPageDisplays();
-    }
+    const activePage = route.page;
+    requestAnimationFrame(() => {
+      if (document.body.dataset.page !== activePage) return;
+      updateBenchmarkDisplays();
+    });
   } else {
     setupHeroReturnAnimation();
   }

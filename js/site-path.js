@@ -1,12 +1,23 @@
-export function getSiteBase() {
-  if (typeof window !== "undefined" && window.__BLUEPRINT_BASE__ != null) {
-    return String(window.__BLUEPRINT_BASE__).replace(/\/$/, "");
+function resolveSiteBase() {
+  const meta = document.querySelector('meta[name="blueprint-base"]');
+  const metaBase = (meta?.getAttribute("content") || "").replace(/\/$/, "");
+  const configured =
+    typeof window !== "undefined" && window.__BLUEPRINT_BASE__ != null
+      ? String(window.__BLUEPRINT_BASE__).replace(/\/$/, "")
+      : metaBase;
+
+  if (!configured || typeof window === "undefined") return configured;
+
+  const path = window.location.pathname.replace(/\/+$/, "") || "/";
+  if (path === configured || path.startsWith(`${configured}/`)) {
+    return configured;
   }
 
-  const meta = document.querySelector('meta[name="blueprint-base"]');
-  const raw = meta?.getAttribute("content");
-  if (!raw) return "";
-  return raw.replace(/\/$/, "");
+  return "";
+}
+
+export function getSiteBase() {
+  return resolveSiteBase();
 }
 
 export function sitePath(path) {

@@ -15,7 +15,12 @@
     <script>
       (function () {
         var meta = document.querySelector('meta[name="blueprint-base"]');
-        var base = (meta && meta.getAttribute("content") || "").replace(/\/$/, "");
+        var metaBase = (meta && meta.getAttribute("content") || "").replace(/\/$/, "");
+        var path = window.location.pathname.replace(/\/+$/, "") || "/";
+        var base = metaBase;
+        if (metaBase && path !== metaBase && path.indexOf(metaBase + "/") !== 0) {
+          base = "";
+        }
         window.__BLUEPRINT_BASE__ = base;
 
         var saved = sessionStorage.getItem("blueprint-spa-redirect");
@@ -29,7 +34,7 @@
           return base ? base + normalized : normalized;
         }
 
-        var cacheVersion = "20260602-107";
+        var cacheVersion = "20260603-2";
         var stylesheet = document.createElement("link");
         stylesheet.rel = "stylesheet";
         stylesheet.href = bp("/styles.css?v=" + cacheVersion);

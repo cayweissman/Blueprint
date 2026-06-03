@@ -3115,14 +3115,14 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
   .primary-nav .nav-list {
     flex-direction: column;
     align-items: stretch;
-    gap: 1px;
+    gap: 0.35rem;
     width: min(100%, 22rem);
     padding: 0;
-    background: rgba(244, 247, 251, 0.18);
+    background: transparent;
   }
 
   .primary-nav .nav-list li {
-    background: var(--public-bg);
+    background: transparent;
     border-bottom: none;
   }
 
@@ -3367,6 +3367,16 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
 
   .brand-subtitle {
     display: none;
+  }
+
+  body.theme-public[data-page="home"] .section-media,
+  body.theme-public[data-page="home"] .section-scrim,
+  body.theme-public[data-page="home"] .section-source,
+  body.theme-public[data-page="home"] .hero-vanta,
+  body.theme-public[data-page="home"] .tempus-orb-holder,
+  body.theme-public[data-page="home"] .simple-motion,
+  body.theme-public[data-page="home"] .palantir-motion {
+    display: none !important;
   }
 
   .section-media video,

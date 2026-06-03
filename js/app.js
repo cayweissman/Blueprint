@@ -716,10 +716,10 @@ function updatePortfolioPageDisplays() {
 
   rows.forEach((row) => {
     const setCell = (selector, text, className = "") => {
-      const element = page.querySelector(`[${selector}="${row.key}"]`);
-      if (!element) return;
-      element.textContent = text;
-      if (className) element.className = className;
+      page.querySelectorAll(`[${selector}="${row.key}"]`).forEach((element) => {
+        element.textContent = text;
+        if (className) element.className = className;
+      });
     };
 
     setCell("data-portfolio-start", row.startClose != null ? formatPrice(row.startClose) : loading ? "Loading…" : "—");
@@ -1013,7 +1013,9 @@ function getRoute() {
   const parts = path.split("/").filter(Boolean);
 
   if (parts.length === 0 || parts[0] === "index.html" || parts[0] === "404.html") return { page: "home", params: {} };
-  if (parts[0] === "portfolio" && parts[1]) return { page: "holding-detail", params: { ticker: parts[1].toUpperCase() } };
+  if (parts[0] === "portfolio" && parts[1] && parts[1] !== "index.html" && parts[1] !== "404.html") {
+    return { page: "holding-detail", params: { ticker: parts[1].toUpperCase() } };
+  }
   if (parts[0] === "portfolio") return { page: "portfolio", params: {} };
   if (parts[0] === "research" && parts[1]) return { page: "research-detail", params: { slug: parts[1] } };
   if (parts[0] === "research") return { page: "research", params: {} };
@@ -2239,7 +2241,7 @@ function cleanupHeroVanta() {
 }
 
 function shouldRenderHeroVanta() {
-  return !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  return !isMobileLayout() && !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 function waitForVantaReady(maxAttempts = 60) {
@@ -2686,6 +2688,9 @@ function setupHomePageExperience() {
 
     section.dataset.backdrop = videoKey;
     section.dataset.mediaType = video.type;
+
+    if (isMobileLayout()) return;
+
     const mediaMarkup =
       video.type === "tempus-orb"
         ? `<div class="tempus-orb-holder" aria-hidden="true"><div id="tempus-one-orb"></div></div>`
@@ -2800,9 +2805,11 @@ function setupHomePageExperience() {
   });
 
   updateHomeScrollCta(0, sections.length);
-  requestAnimationFrame(() => mountHeroVanta());
+  if (!isMobileLayout()) {
+    requestAnimationFrame(() => mountHeroVanta());
+  }
 
-  if (document.getElementById("tempus-one-orb")) {
+  if (!isMobileLayout() && document.getElementById("tempus-one-orb")) {
     requestAnimationFrame(() => mountTempusOrbBackground());
   }
 
@@ -2883,6 +2890,9 @@ function render() {
       updateHeroMetricsDisplay();
     } else if (route.page === "portfolio") {
       updatePortfolioPageDisplays();
+      void Promise.all([refreshLiveCompanyReturns(), refreshLiveBenchmark()]).then(() => {
+        if (document.body.dataset.page === "portfolio") updatePortfolioPageDisplays();
+      });
     } else {
       updateHoldingDetailPageDisplays();
     }

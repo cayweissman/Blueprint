@@ -1843,6 +1843,11 @@ body.theme-public[data-page]:not([data-page="home"]) .transparent-motion-video {
   width: 0.7rem;
   height: 0.7rem;
   flex: 0 0 auto;
+  transition: transform 220ms ease;
+}
+
+.page-home-scroll-cta.is-back-to-top .hero-positions-chevron {
+  transform: rotate(180deg);
 }
 
 .page-home .home-snapshot {

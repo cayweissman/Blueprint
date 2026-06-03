@@ -1178,8 +1178,17 @@ function updateHomeScrollCta(activeIndex, sectionCount = getHomeScrollSections()
   const inPortfolio = activeIndex > 0;
   const isLastSection = activeIndex === sectionCount - 1;
 
-  cta.hidden = inPortfolio && isLastSection;
-  label.textContent = inPortfolio ? "Next position" : "See positions";
+  cta.hidden = false;
+  if (!inPortfolio) {
+    label.textContent = "See positions";
+    cta.classList.remove("is-back-to-top");
+  } else if (isLastSection) {
+    label.textContent = "Back to top";
+    cta.classList.add("is-back-to-top");
+  } else {
+    label.textContent = "Next position";
+    cta.classList.remove("is-back-to-top");
+  }
   cta.classList.remove("is-chrome-tone");
 }
 
@@ -1191,6 +1200,11 @@ function handleHomeScrollCtaClick() {
 
   if (activeIndex <= 0) {
     goToPositions();
+    return;
+  }
+
+  if (activeIndex === sections.length - 1) {
+    scrollToHomeSection(sections[0]);
     return;
   }
 

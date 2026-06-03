@@ -1225,12 +1225,12 @@ function renderHomePrimaryMetrics(returnMarkup, allocationWeight, holdingKey = "
   return `
     <div class="home-primary-metrics">
       <div>
-        <div class="muted">Since inception</div>
-        ${returnMarkup}
-      </div>
-      <div>
         <div class="muted">Allocation</div>
         <div class="hero-return"${holdingKey ? ` data-holding-allocation="${escapeHtml(holdingKey)}"` : ""}>${escapeHtml(formatAllocation(allocationWeight))}</div>
+      </div>
+      <div>
+        <div class="muted">Since inception</div>
+        ${returnMarkup}
       </div>
     </div>
   `;
@@ -1418,9 +1418,9 @@ function renderPortfolioListRow(row) {
       </td>
       <td><span class="tag">${escapeHtml(row.ticker)}</span></td>
       <td data-portfolio-allocation="${escapeHtml(row.key)}" class="portfolio-allocation">${escapeHtml(formatAllocation(row.allocation))}</td>
+      <td data-portfolio-return="${escapeHtml(row.key)}" class="portfolio-return ${companyReturnValueClass(row.returnPct)}">${formatCompanyReturnPercent(row.returnPct)}</td>
       <td data-portfolio-start="${escapeHtml(row.key)}">${row.startClose != null ? formatPrice(row.startClose) : loading ? "Loading…" : "—"}</td>
       <td data-portfolio-end="${escapeHtml(row.key)}" class="portfolio-end ${companyReturnValueClass(row.returnPct)}">${row.endClose != null ? formatPrice(row.endClose) : loading ? "Loading…" : "—"}</td>
-      <td data-portfolio-return="${escapeHtml(row.key)}" class="portfolio-return ${companyReturnValueClass(row.returnPct)}">${formatCompanyReturnPercent(row.returnPct)}</td>
       <td data-portfolio-alpha="${escapeHtml(row.key)}" class="portfolio-alpha ${benchmarkValueClass(row.alpha)}">${loading && row.alpha == null ? "Loading…" : formatLiveBenchmarkPercent(row.alpha)}</td>
       <td data-portfolio-contribution="${escapeHtml(row.key)}" class="portfolio-contribution ${row.contribution == null ? (loading ? "benchmark-pending" : "") : valueClass(row.contribution)}">${row.contribution == null ? (loading ? "Loading…" : "—") : formatPercentPrecise(row.contribution)}</td>
       <td><a href="/portfolio/${escapeHtml(row.ticker)}" data-link class="public-soft-link portfolio-thesis-link">See Thesis</a></td>
@@ -1445,16 +1445,16 @@ function renderPortfolioCard(row) {
           <dd data-portfolio-allocation="${escapeHtml(row.key)}" class="portfolio-allocation">${escapeHtml(formatAllocation(row.allocation))}</dd>
         </div>
         <div>
+          <dt class="stat-label">Since inception</dt>
+          <dd data-portfolio-return="${escapeHtml(row.key)}" class="portfolio-return ${companyReturnValueClass(row.returnPct)}">${formatCompanyReturnPercent(row.returnPct)}</dd>
+        </div>
+        <div>
           <dt class="stat-label">Inception</dt>
           <dd data-portfolio-start="${escapeHtml(row.key)}">${row.startClose != null ? formatPrice(row.startClose) : loading ? "Loading…" : "—"}</dd>
         </div>
         <div>
           <dt class="stat-label">Latest</dt>
           <dd data-portfolio-end="${escapeHtml(row.key)}" class="portfolio-end ${companyReturnValueClass(row.returnPct)}">${row.endClose != null ? formatPrice(row.endClose) : loading ? "Loading…" : "—"}</dd>
-        </div>
-        <div>
-          <dt class="stat-label">Since inception</dt>
-          <dd data-portfolio-return="${escapeHtml(row.key)}" class="portfolio-return ${companyReturnValueClass(row.returnPct)}">${formatCompanyReturnPercent(row.returnPct)}</dd>
         </div>
         <div>
           <dt class="stat-label">Vs S&amp;P</dt>
@@ -1498,9 +1498,9 @@ function renderPortfolioPage() {
                   <th>Company</th>
                   <th>Ticker</th>
                   <th>Allocation</th>
+                  <th>Since inception</th>
                   <th>Inception</th>
                   <th>Latest</th>
-                  <th>Since inception</th>
                   <th>Vs S&amp;P</th>
                 <th>Contribution</th>
                 <th>Thesis</th>
@@ -2224,14 +2224,108 @@ function renderPage(route) {
 
 let publicScrollCleanup = null;
 let percentAnimationCleanups = [];
+const pendingPercentByElement = new WeakMap();
+const percentObservers = new Map();
 
 function cleanupPercentAnimations() {
   percentAnimationCleanups.forEach((cleanup) => cleanup());
   percentAnimationCleanups = [];
+  percentObservers.forEach((observer) => observer.disconnect());
+  percentObservers.clear();
 }
 
 function cleanupHeroMetricsAnimations() {
   cleanupPercentAnimations();
+}
+
+function getPercentScrollRoot(element) {
+  return (
+    element.closest(".page-home.public-page")
+    || element.closest(".portfolio-card-list")
+    || element.closest(".portfolio-list-wrap")
+    || element.closest(".page-portfolio")
+    || element.closest(".page-holding-thesis")
+    || null
+  );
+}
+
+function unobservePercentElement(element) {
+  percentObservers.forEach((observer) => observer.unobserve(element));
+}
+
+function playPendingPercentAnimation(element) {
+  const pending = pendingPercentByElement.get(element);
+  if (!pending) return;
+
+  unobservePercentElement(element);
+  pendingPercentByElement.delete(element);
+
+  if (element.dataset.percentAnimated === String(pending.value)) {
+    element.textContent = pending.format(pending.value);
+    return;
+  }
+
+  element.dataset.percentAnimated = String(pending.value);
+  const cleanup = runCountUpAnimation(element, pending.value, {
+    wind: pending.wind,
+    format: pending.format,
+  });
+  element.__percentAnimCleanup = cleanup;
+  percentAnimationCleanups.push(() => {
+    cleanup();
+    if (element.__percentAnimCleanup === cleanup) {
+      element.__percentAnimCleanup = null;
+    }
+  });
+}
+
+function handlePercentIntersection(entries) {
+  entries.forEach((entry) => {
+    if (!entry.isIntersecting) return;
+    playPendingPercentAnimation(entry.target);
+  });
+}
+
+function getPercentObserver(root) {
+  const key = root || "viewport";
+  if (!percentObservers.has(key)) {
+    percentObservers.set(
+      key,
+      new IntersectionObserver(handlePercentIntersection, {
+        root,
+        threshold: 0.45,
+      }),
+    );
+  }
+  return percentObservers.get(key);
+}
+
+function queuePercentAnimation(element, value, { wind = false, format = formatPercentPrecise } = {}) {
+  if (element.__percentAnimCleanup) {
+    element.__percentAnimCleanup();
+    element.__percentAnimCleanup = null;
+  }
+
+  unobservePercentElement(element);
+
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    element.textContent = format(value);
+    element.dataset.percentAnimated = String(value);
+    return;
+  }
+
+  if (element.dataset.percentAnimated !== String(value)) {
+    delete element.dataset.percentAnimated;
+  }
+
+  if (element.dataset.percentAnimated === String(value)) {
+    element.textContent = format(value);
+    return;
+  }
+
+  element.textContent = format(0);
+  pendingPercentByElement.set(element, { value, wind, format });
+  getPercentObserver(getPercentScrollRoot(element)).observe(element);
 }
 
 function setAnimatedPercent(element, value, options = {}) {
@@ -2247,6 +2341,13 @@ function setAnimatedPercent(element, value, options = {}) {
   const useWind = wind ?? element.classList.contains("hero-return");
 
   if (value == null) {
+    if (element.__percentAnimCleanup) {
+      element.__percentAnimCleanup();
+      element.__percentAnimCleanup = null;
+    }
+    unobservePercentElement(element);
+    pendingPercentByElement.delete(element);
+    delete element.dataset.percentAnimated;
     element.textContent = loading ? "Loading…" : "—";
     if (className) element.className = className.trim();
     element.dataset.returnTarget = "0";
@@ -2255,7 +2356,7 @@ function setAnimatedPercent(element, value, options = {}) {
 
   if (className) element.className = className.trim();
   element.dataset.returnTarget = String(value);
-  percentAnimationCleanups.push(runCountUpAnimation(element, value, { wind: useWind, format }));
+  queuePercentAnimation(element, value, { wind: useWind, format });
 }
 
 function cleanupPublicScrollExperience() {

@@ -32,6 +32,9 @@ jobs:
             cp index.html "$route/index.html"
           done
 
+      - name: Refresh market data cache
+        run: python3 update_benchmark.py
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
 

@@ -141,8 +141,24 @@ def fetch_holdings_since_launch() -> dict:
     }
 
 
+def _load_existing_cache(path: Path) -> dict | None:
+    if not path.is_file():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None
+
+
 def write_benchmark_cache() -> dict:
-    data = fetch_sp500_since_launch()
+    try:
+        data = fetch_sp500_since_launch()
+    except (urllib.error.URLError, urllib.error.HTTPError, ValueError, KeyError, IndexError):
+        existing = _load_existing_cache(SP500_CACHE_PATH)
+        if existing and isinstance(existing.get("sp500Return"), (int, float)):
+            return existing
+        raise
+
     SP500_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
     SP500_CACHE_PATH.write_text(json.dumps(data), encoding="utf-8")
     return data
@@ -150,6 +166,15 @@ def write_benchmark_cache() -> dict:
 
 def write_holdings_cache() -> dict:
     data = fetch_holdings_since_launch()
+    existing = _load_existing_cache(HOLDINGS_CACHE_PATH)
+    if existing and isinstance(existing.get("holdings"), dict):
+        for key, entry in data["holdings"].items():
+            if entry.get("return") is not None:
+                continue
+            previous = existing["holdings"].get(key)
+            if previous and isinstance(previous.get("return"), (int, float)):
+                data["holdings"][key] = previous
+
     HOLDINGS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
     HOLDINGS_CACHE_PATH.write_text(json.dumps(data), encoding="utf-8")
     return data

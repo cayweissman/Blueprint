@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Blueprint</title>
+    <script>
+      (function () {
+        var path = window.location.pathname + window.location.search + window.location.hash;
+        sessionStorage.setItem("blueprint-spa-redirect", path);
+
+        var parts = window.location.pathname.split("/").filter(Boolean);
+        var routes = {
+          portfolio: 1,
+          principles: 1,
+          about: 1,
+          admin: 1,
+          research: 1,
+          letters: 1,
+          performance: 1,
+        };
+
+        var base = "";
+        if (parts.length && !routes[parts[0]]) {
+          base = "/" + parts[0];
+        }
+
+        window.location.replace(base + "/" || "/");
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

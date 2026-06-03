@@ -3019,8 +3019,17 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
     display: none;
   }
 
+  .page-portfolio .portfolio-list-panel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
   .page-portfolio .portfolio-card-list {
     display: grid;
+    flex: 1;
+    min-height: 0;
     align-content: start;
     padding-bottom: 0;
   }
@@ -3188,7 +3197,7 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
     grid-template-columns: 1fr;
   }
 
-  .site-shell-public .section {
+  .site-shell-public .section:not(.portfolio-section) {
     padding:
       calc(5rem + var(--safe-top))
       calc(1.15rem + var(--safe-right))
@@ -3315,7 +3324,7 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
     padding: 1rem;
   }
 
-  .site-shell-public .section {
+  .site-shell-public .section:not(.portfolio-section) {
     padding:
       var(--public-content-top)
       var(--public-content-inline-end)

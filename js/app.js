@@ -94,7 +94,7 @@ const schemaModels = [
 
 const seedData = {
   siteContent: {
-    navigation: ["Home", "Portfolio", "Principles", "About"],
+    navigation: ["Portfolio", "Principles", "About"],
     home: {
       name: "Blueprint",
       manifesto: [],
@@ -1181,13 +1181,11 @@ function handleHomeScrollCtaClick() {
   if (!nextSection) return;
 
   scrollToHomeSection(nextSection);
-  updateHomeNavActiveState(true);
 }
 
 function goToPositions(behavior = "smooth") {
   if (getRoute().page === "home") {
     scrollToFirstPosition(behavior);
-    updateHomeNavActiveState(true);
     return;
   }
 
@@ -1251,7 +1249,6 @@ function renderHeader(route) {
   }
 
   const navItems = [
-    { href: "/", label: "Home" },
     { href: "/portfolio", label: "Portfolio" },
     { href: "/principles", label: "Principles" },
     { href: "/about", label: "About" },
@@ -2583,15 +2580,6 @@ function setupPingPongPlayback(videoElement) {
   };
 }
 
-function updateHomeNavActiveState(pastHero) {
-  const homeLink = app.querySelector(".primary-nav .nav-list li:first-child a");
-  const portfolioLink = app.querySelector("[data-nav-positions]");
-  if (!homeLink || !portfolioLink) return;
-
-  homeLink.classList.toggle("is-active", !pastHero);
-  portfolioLink.classList.toggle("is-active", pastHero);
-}
-
 function setupHomeScrollSnapLock(container, sections) {
   let settleTimer = null;
 
@@ -2770,7 +2758,6 @@ function setupHomePageExperience() {
     });
 
     syncSectionMediaPlayback(sections, nextIndex);
-    updateHomeNavActiveState(nextIndex > 0);
     updateHomeScrollCta(nextIndex, sections.length);
   };
 
@@ -2812,17 +2799,6 @@ function setupHomePageExperience() {
   if (!isMobileLayout() && document.getElementById("tempus-one-orb")) {
     requestAnimationFrame(() => mountTempusOrbBackground());
   }
-
-  const syncNavFromScroll = () => {
-    const hero = sections[0];
-    if (!hero?.classList.contains("section-hero")) return;
-    const pastHero = container.scrollTop + 8 >= hero.offsetTop + hero.offsetHeight;
-    updateHomeNavActiveState(pastHero);
-  };
-
-  syncNavFromScroll();
-  container.addEventListener("scroll", syncNavFromScroll, { passive: true });
-  cleanupCallbacks.push(() => container.removeEventListener("scroll", syncNavFromScroll));
 
   if (isMobileLayout()) {
     cleanupCallbacks.push(setupHomeScrollSnapLock(container, sections));
@@ -2904,7 +2880,6 @@ function render() {
     sessionStorage.removeItem(SCROLL_TO_POSITIONS_KEY);
     requestAnimationFrame(() => {
       scrollToFirstPosition("smooth");
-      updateHomeNavActiveState(true);
     });
   }
 }

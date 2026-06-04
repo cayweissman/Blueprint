@@ -64,6 +64,13 @@ def fetch_symbol_since_launch(symbol: str) -> dict:
     end_pair = pairs[-1]
     return_pct = (end_pair[1] / start_pair[1] - 1) * 100
 
+    daily_return = None
+    prior_close = None
+    if len(pairs) >= 2:
+        prior_pair = pairs[-2]
+        prior_close = prior_pair[1]
+        daily_return = (end_pair[1] / prior_pair[1] - 1) * 100
+
     return {
         "symbol": symbol,
         "launchDate": LAUNCH_DATE,
@@ -71,7 +78,9 @@ def fetch_symbol_since_launch(symbol: str) -> dict:
         "endDate": datetime.fromtimestamp(end_pair[0], tz=timezone.utc).strftime("%Y-%m-%d"),
         "startClose": round(start_pair[1], 4),
         "endClose": round(end_pair[1], 4),
+        "priorClose": round(prior_close, 4) if prior_close is not None else None,
         "return": round(return_pct, 4),
+        "dailyReturn": round(daily_return, 4) if daily_return is not None else None,
         "updatedAt": datetime.now(timezone.utc).isoformat(),
         "source": "live",
     }
@@ -108,10 +117,12 @@ def _fetch_holding_entry(holding: dict) -> dict:
         return {
             **base,
             "return": data["return"],
+            "dailyReturn": data.get("dailyReturn"),
             "startDate": data["startDate"],
             "endDate": data["endDate"],
             "startClose": data["startClose"],
             "endClose": data["endClose"],
+            "priorClose": data.get("priorClose"),
             "updatedAt": data["updatedAt"],
             "source": "live",
         }

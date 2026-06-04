@@ -1872,14 +1872,15 @@ body.theme-public[data-page]:not([data-page="home"]) .transparent-motion-video {
   background: var(--public-bg);
 }
 
-.home-primary-metrics {
+.home-primary-metrics,
+.home-hero-returns {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
 
 .home-primary-metrics > div > .muted,
-.home-snapshot > div:first-child > .muted {
+.home-hero-returns > div > .muted {
   display: block;
   margin-bottom: 0.55rem;
 }
@@ -3357,7 +3358,8 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
     line-height: 0.9;
   }
 
-  .page-home .home-primary-metrics {
+  .page-home .home-primary-metrics,
+  .page-home .home-hero-returns {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
   }

@@ -576,10 +576,20 @@ function getCompanyReturn(companyKey) {
   return companyReturnsState.holdings[companyKey]?.return ?? null;
 }
 
+function getCompanyDailyReturn(companyKey) {
+  return companyReturnsState.holdings[companyKey]?.dailyReturn ?? null;
+}
+
 function getCompanyWeightedReturn(companyKey) {
   const returnValue = getCompanyReturn(companyKey);
   if (returnValue == null) return null;
   return (getHoldingAllocation(companyKey) * returnValue) / 100;
+}
+
+function getCompanyWeightedDailyReturn(companyKey) {
+  const dailyReturn = getCompanyDailyReturn(companyKey);
+  if (dailyReturn == null) return null;
+  return (getHoldingAllocation(companyKey) * dailyReturn) / 100;
 }
 
 function getWeightedPortfolioReturn() {
@@ -587,6 +597,18 @@ function getWeightedPortfolioReturn() {
 
   for (const holding of PORTFOLIO_HOLDINGS) {
     const weighted = getCompanyWeightedReturn(holding.key);
+    if (weighted == null) return null;
+    total += weighted;
+  }
+
+  return total;
+}
+
+function getWeightedPortfolioDailyReturn() {
+  let total = 0;
+
+  for (const holding of PORTFOLIO_HOLDINGS) {
+    const weighted = getCompanyWeightedDailyReturn(holding.key);
     if (weighted == null) return null;
     total += weighted;
   }
@@ -886,11 +908,19 @@ function updateCompanyReturnDisplays() {
 }
 
 function updateHeroMetricsDisplay() {
+  const dailyElement = app.querySelector(".section-hero [data-hero-daily-return]");
   const returnElement = app.querySelector(".section-hero [data-hero-since-inception]");
   const alphaElement = app.querySelector(".section-hero [data-hero-alpha] .metric-value");
   const loading = companyReturnsState.loading || benchmarkState.loading;
+  const weightedDaily = getWeightedPortfolioDailyReturn();
   const weighted = getWeightedPortfolioReturn();
   const alpha = getHeroAlphaVsSp500();
+
+  setAnimatedPercent(dailyElement, weightedDaily, {
+    loading,
+    className: weightedDaily == null ? `hero-return ${loading ? "benchmark-pending" : ""}`.trim() : `hero-return ${valueClass(weightedDaily)}`.trim(),
+    wind: true,
+  });
 
   setAnimatedPercent(returnElement, weighted, {
     loading,
@@ -1360,14 +1390,24 @@ function renderHomePage() {
             <h1 class="hero-title">Blueprint</h1>
           </div>
           <div class="home-snapshot">
-            <div>
-              <div class="muted">Since inception</div>
-              <div
-                class="hero-return benchmark-pending"
-                data-hero-since-inception
-                data-return-target="0"
-                aria-live="polite"
-              >Loading…</div>
+            <div class="home-hero-returns">
+              <div>
+                <div class="muted">Today&rsquo;s return</div>
+                <div
+                  class="hero-return benchmark-pending"
+                  data-hero-daily-return
+                  aria-live="polite"
+                >Loading…</div>
+              </div>
+              <div>
+                <div class="muted">Since inception</div>
+                <div
+                  class="hero-return benchmark-pending"
+                  data-hero-since-inception
+                  data-return-target="0"
+                  aria-live="polite"
+                >Loading…</div>
+              </div>
             </div>
             <div class="snapshot-grid">
               ${renderMetricCard("Launched", FUND_LAUNCH_LABEL)}

@@ -1,4 +1,4 @@
-import { holdingTheses } from "./holding-theses.js";
+import { holdingTheses } from "./holding-theses.js?v=20260604-55";
 import { aboutContent, principlesContent } from "./institutional-content.js";
 import { getSiteBase, sitePath } from "./site-path.js";
 
@@ -193,8 +193,7 @@ const backgroundVideos = {
     company: "Palantir",
     descriptor: "Enterprise intelligence software",
     type: "video",
-    src: "/assets/palantir-800x450.mp4",
-    pingPong: true,
+    src: "/assets/palantir-gotham.mp4",
   },
   amazon: {
     company: "Amazon",
@@ -207,8 +206,13 @@ const backgroundVideos = {
     company: "Tesla",
     descriptor: "EV and energy technology",
     type: "video",
-    src: "/assets/tesla-loop.mp4",
-    pingPong: true,
+    src: "/assets/tesla-model-3.mp4",
+  },
+  kratos: {
+    company: "Kratos",
+    descriptor: "Tactical drones and hypersonics",
+    type: "video",
+    src: "/assets/kratos-negate.mp4",
   },
   cloudflare: {
     company: "Cloudflare",
@@ -226,8 +230,7 @@ const backgroundVideos = {
     company: "IonQ",
     descriptor: "Quantum computing systems",
     type: "video",
-    src: "/assets/ionq-loop.mp4",
-    pingPong: true,
+    src: "/assets/ionq-web-site.mp4",
   },
 };
 
@@ -240,6 +243,7 @@ const HOLDING_EYEBROWS = {
   crispr: "CRISPR",
   ginkgo: "Ginkgo",
   ionq: "IonQ",
+  kratos: "Kratos",
   nebius: "Nebius",
   oklo: "Oklo",
   palantir: "Palantir",
@@ -250,12 +254,16 @@ const HOLDING_EYEBROWS = {
   xenergy: "X-Energy",
 };
 
-const VISIBLE_PORTFOLIO_ORDER = [
+const VISIBLE_PORTFOLIO_KEYS = [
+  "kratos",
   "nebius",
+  "palantir",
   "robinhood",
   "oklo",
   "crispr",
+  "tesla",
   "xenergy",
+  "ionq",
   "aurora",
   "ginkgo",
   "tempus",
@@ -266,11 +274,29 @@ const HIDDEN_PORTFOLIO_KEYS = new Set([
   "amazon",
   "arm",
   "cloudflare",
-  "ionq",
-  "palantir",
   "symbotic",
-  "tesla",
 ]);
+
+const PORTFOLIO_ALLOCATIONS = {
+  kratos: 12.5,
+  nebius: 12.5,
+  palantir: 12.0,
+  robinhood: 11.0,
+  oklo: 10.0,
+  crispr: 9.5,
+  tesla: 7.0,
+  xenergy: 6.5,
+  ionq: 6.5,
+  aurora: 5.0,
+  ginkgo: 5.0,
+  tempus: 2.5,
+};
+
+const VISIBLE_PORTFOLIO_ORDER = [...VISIBLE_PORTFOLIO_KEYS].sort((a, b) => {
+  const byWeight = (PORTFOLIO_ALLOCATIONS[b] ?? 0) - (PORTFOLIO_ALLOCATIONS[a] ?? 0);
+  if (byWeight !== 0) return byWeight;
+  return VISIBLE_PORTFOLIO_KEYS.indexOf(a) - VISIBLE_PORTFOLIO_KEYS.indexOf(b);
+});
 
 const ALL_PORTFOLIO_HOLDINGS = [
   ...VISIBLE_PORTFOLIO_ORDER.map((key) => ({ key, eyebrow: HOLDING_EYEBROWS[key] })),
@@ -281,20 +307,9 @@ const ALL_PORTFOLIO_HOLDINGS = [
 
 const PORTFOLIO_HOLDINGS = ALL_PORTFOLIO_HOLDINGS.filter((holding) => !HIDDEN_PORTFOLIO_KEYS.has(holding.key));
 
-const PORTFOLIO_ALLOCATIONS = {
-  nebius: 16.5,
-  robinhood: 16.3,
-  oklo: 14.9,
-  crispr: 14.4,
-  xenergy: 10.6,
-  aurora: 10.3,
-  ginkgo: 9.9,
-  tempus: 7.1,
-};
-
 const sectionVideoSequence = PORTFOLIO_HOLDINGS.map((holding) => holding.key);
 
-const FUND_LAUNCH_LABEL = "01/20/26";
+const FUND_LAUNCH_LABEL = "01/20/25";
 const HOLDINGS_COUNT_DEFAULT = PORTFOLIO_HOLDINGS.length;
 
 function getHoldingAllocation(companyKey) {
@@ -314,6 +329,7 @@ const companyHoldingsMeta = {
   avav: { ticker: "AVAV", category: "Defense drones" },
   palantir: { ticker: "PLTR", category: "Enterprise software" },
   amazon: { ticker: "AMZN", category: "Cloud & commerce" },
+  kratos: { ticker: "KTOS", category: "Defense technology" },
   tesla: { ticker: "TSLA", category: "EV & energy" },
   cloudflare: { ticker: "NET", category: "Edge infrastructure" },
   crispr: { ticker: "CRSP", category: "Gene editing" },
@@ -337,7 +353,7 @@ function buildSeedPositions() {
       convictionScore: 8,
       thesisSlug: holding.key,
       status: "current",
-      dateInitiated: "2026-01-20",
+      dateInitiated: "2025-01-20",
       originalThesis: "",
       risks: "",
       createdAt,
@@ -2226,7 +2242,7 @@ function renderAboutPage() {
       <section class="section holding-thesis-section">
         <div class="holding-thesis-top">
           <div class="holding-thesis-header">
-            <h1 class="hero-title">About</h1>
+            <h1 class="hero-title">About us</h1>
           </div>
         </div>
         <article class="holding-thesis-article institutional-article">
@@ -3159,7 +3175,7 @@ function render() {
     portfolio: "Holdings",
     "holding-detail": "Holding",
     principles: "Principles",
-    about: "About",
+    about: "About us",
   };
   const pageTitleEntry = pageTitles[route.page];
   const pageTitle =

@@ -10,18 +10,22 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from pathlib import Path
 
-LAUNCH_DATE = "2026-01-20"
+LAUNCH_DATE = "2025-01-20"
 SP500_SYMBOL = "^GSPC"
 ROOT = Path(__file__).resolve().parent
 SP500_CACHE_PATH = ROOT / "api" / "sp500-since-launch.json"
 HOLDINGS_CACHE_PATH = ROOT / "api" / "holdings-since-launch.json"
 
 HOLDINGS = [
+    {"key": "kratos", "symbol": "KTOS", "name": "Kratos", "category": "Defense technology"},
     {"key": "nebius", "symbol": "NBIS", "name": "Nebius", "category": "AI infrastructure"},
+    {"key": "palantir", "symbol": "PLTR", "name": "Palantir", "category": "Enterprise software"},
     {"key": "robinhood", "symbol": "HOOD", "name": "Robinhood", "category": "Retail investing"},
     {"key": "oklo", "symbol": "OKLO", "name": "Oklo", "category": "Advanced nuclear"},
     {"key": "crispr", "symbol": "CRSP", "name": "CRISPR", "category": "Gene editing"},
+    {"key": "tesla", "symbol": "TSLA", "name": "Tesla", "category": "EV & energy"},
     {"key": "xenergy", "symbol": "XE", "name": "X-Energy", "category": "Modular nuclear"},
+    {"key": "ionq", "symbol": "IONQ", "name": "IonQ", "category": "Quantum computing"},
     {"key": "aurora", "symbol": "AUR", "name": "Aurora", "category": "Autonomous freight"},
     {"key": "ginkgo", "symbol": "DNA", "name": "Ginkgo", "category": "Synthetic biology"},
     {"key": "tempus", "symbol": "TEM", "name": "Tempus", "category": "Precision medicine"},
@@ -29,21 +33,22 @@ HOLDINGS = [
     {"key": "amazon", "symbol": "AMZN", "name": "Amazon", "category": "Cloud & commerce"},
     {"key": "arm", "symbol": "ARM", "name": "Arm", "category": "Semiconductors"},
     {"key": "cloudflare", "symbol": "NET", "name": "Cloudflare", "category": "Edge infrastructure"},
-    {"key": "ionq", "symbol": "IONQ", "name": "IonQ", "category": "Quantum computing"},
-    {"key": "palantir", "symbol": "PLTR", "name": "Palantir", "category": "Enterprise software"},
     {"key": "symbotic", "symbol": "SYM", "name": "Symbotic", "category": "Warehouse automation"},
-    {"key": "tesla", "symbol": "TSLA", "name": "Tesla", "category": "EV & energy"},
 ]
 
 PORTFOLIO_ALLOCATIONS = {
-    "nebius": 16.5,
-    "robinhood": 16.3,
-    "oklo": 14.9,
-    "crispr": 14.4,
-    "xenergy": 10.6,
-    "aurora": 10.3,
-    "ginkgo": 9.9,
-    "tempus": 7.1,
+    "kratos": 12.5,
+    "nebius": 12.5,
+    "palantir": 12.0,
+    "robinhood": 11.0,
+    "oklo": 10.0,
+    "crispr": 9.5,
+    "tesla": 7.0,
+    "xenergy": 6.5,
+    "ionq": 6.5,
+    "aurora": 5.0,
+    "ginkgo": 5.0,
+    "tempus": 2.5,
 }
 
 

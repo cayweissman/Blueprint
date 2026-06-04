@@ -1988,6 +1988,11 @@ body.theme-public[data-page]:not([data-page="home"]) .transparent-motion-video {
   text-transform: uppercase;
 }
 
+.page-home .section-hero .hero-title.hero-tagline {
+  text-transform: none;
+  color: #fff;
+}
+
 .page-home .section-company .hero-title {
   color: #fff;
 }

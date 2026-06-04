@@ -4,14 +4,18 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import parse_qs, urlparse
 
-from benchmark import fetch_holdings_since_launch, fetch_sp500_since_launch, write_benchmark_cache, write_holdings_cache
+import benchmark
 
 ROOT = Path(__file__).resolve().parent
 INDEX_HTML = ROOT / "index.html"
+HOLDINGS_CACHE_PATH = ROOT / "api" / "holdings-since-launch.json"
+SP500_CACHE_PATH = ROOT / "api" / "sp500-since-launch.json"
 
 STATIC_EXTENSIONS = {
     ".css",
@@ -69,14 +73,38 @@ class Handler(SimpleHTTPRequestHandler):
 
         return self._resolve_file(path) is None
 
+    def _query_params(self) -> dict[str, list[str]]:
+        parsed = urlparse(self.path)
+        return parse_qs(parsed.query)
+
+    def _load_json_cache(self, path: Path) -> dict | None:
+        if not path.is_file():
+            return None
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            return None
+        return data if isinstance(data, dict) else None
+
+    def _reload_benchmark(self) -> None:
+        importlib.reload(benchmark)
+
     def do_GET(self):
         path = self.path.split("?")[0]
         query = f"?{self.path.split('?', 1)[1]}" if "?" in self.path else ""
+        live = "live" in self._query_params()
 
         if path in ("/api/sp500-since-launch", "/api/sp500-since-launch.json"):
             try:
-                data = fetch_sp500_since_launch()
-                write_benchmark_cache()
+                if not live:
+                    cached = self._load_json_cache(SP500_CACHE_PATH)
+                    if cached is not None:
+                        self._send_json(200, cached)
+                        return
+
+                self._reload_benchmark()
+                data = benchmark.fetch_sp500_since_launch()
+                benchmark.write_benchmark_cache()
                 self._send_json(200, data)
             except Exception as error:
                 self._send_json(502, {"error": str(error)})
@@ -84,8 +112,15 @@ class Handler(SimpleHTTPRequestHandler):
 
         if path in ("/api/holdings-since-launch", "/api/holdings-since-launch.json"):
             try:
-                data = fetch_holdings_since_launch()
-                write_holdings_cache()
+                if not live:
+                    cached = self._load_json_cache(HOLDINGS_CACHE_PATH)
+                    if cached is not None:
+                        self._send_json(200, cached)
+                        return
+
+                self._reload_benchmark()
+                data = benchmark.fetch_holdings_since_launch()
+                benchmark.write_holdings_cache()
                 self._send_json(200, data)
             except Exception as error:
                 self._send_json(502, {"error": str(error)})
@@ -105,12 +140,12 @@ def main() -> None:
     args = parser.parse_args()
 
     try:
-        write_benchmark_cache()
+        benchmark.write_benchmark_cache()
     except Exception as error:
         print(f"Warning: could not warm S&P cache: {error}")
 
     try:
-        write_holdings_cache()
+        benchmark.write_holdings_cache()
     except Exception as error:
         print(f"Warning: could not warm holdings cache: {error}")
 

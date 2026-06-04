@@ -2001,7 +2001,7 @@ body.theme-public[data-page]:not([data-page="home"]) .transparent-motion-video {
 }
 
 .page-home .section-company .snapshot-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .company-description-panel {
@@ -2089,7 +2089,7 @@ body.theme-public[data-page]:not([data-page="home"]) .transparent-motion-video {
 .hero-return--counting,
 .metric-value--counting,
 .portfolio-return.metric-value--counting,
-.portfolio-alpha.metric-value--counting,
+.portfolio-daily.metric-value--counting,
 .portfolio-contribution.metric-value--counting,
 .portfolio-allocation.metric-value--counting,
 .portfolio-end.metric-value--counting {
@@ -2919,7 +2919,7 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
 }
 
 .page-portfolio .portfolio-return,
-.page-portfolio .portfolio-alpha,
+.page-portfolio .portfolio-daily,
 .page-portfolio .portfolio-contribution,
 .page-portfolio .portfolio-end {
   font-variant-numeric: tabular-nums;
@@ -3015,10 +3015,6 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
 
   .page-portfolio .portfolio-summary {
     margin-bottom: 1rem;
-  }
-
-  .page-portfolio [data-portfolio-summary-count] {
-    display: none;
   }
 
   .page-portfolio .portfolio-list-wrap {
@@ -3481,6 +3477,10 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
 
   .snapshot-grid {
     grid-template-columns: 1fr;
+  }
+
+  .page-home .section-company .snapshot-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .snapshot-grid .stat-card:last-child:nth-child(odd) {

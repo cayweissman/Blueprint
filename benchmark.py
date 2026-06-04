@@ -35,6 +35,49 @@ HOLDINGS = [
     {"key": "tesla", "symbol": "TSLA", "name": "Tesla", "category": "EV & energy"},
 ]
 
+PORTFOLIO_ALLOCATIONS = {
+    "nebius": 16.5,
+    "robinhood": 16.3,
+    "oklo": 14.9,
+    "crispr": 14.4,
+    "xenergy": 10.6,
+    "aurora": 10.3,
+    "ginkgo": 9.9,
+    "tempus": 7.1,
+}
+
+
+def _holding_daily_return(entry: dict) -> float | None:
+    daily = entry.get("dailyReturn")
+    if isinstance(daily, (int, float)):
+        return float(daily)
+
+    prior = entry.get("priorClose")
+    end = entry.get("endClose")
+    if isinstance(prior, (int, float)) and isinstance(end, (int, float)) and prior:
+        return (end / prior - 1) * 100
+
+    return None
+
+
+def compute_portfolio_daily_return(holdings: dict) -> float | None:
+    total = 0.0
+    has_any = False
+
+    for key, allocation in PORTFOLIO_ALLOCATIONS.items():
+        entry = holdings.get(key)
+        if not entry:
+            continue
+
+        daily = _holding_daily_return(entry)
+        if daily is None:
+            continue
+
+        has_any = True
+        total += allocation * daily / 100
+
+    return round(total, 4) if has_any else None
+
 
 def fetch_symbol_since_launch(symbol: str) -> dict:
     start_ts = _utc_timestamp(LAUNCH_DATE) - 86400
@@ -147,6 +190,7 @@ def fetch_holdings_since_launch() -> dict:
     return {
         "launchDate": LAUNCH_DATE,
         "holdings": holdings,
+        "portfolioDailyReturn": compute_portfolio_daily_return(holdings),
         "updatedAt": datetime.now(timezone.utc).isoformat(),
         "source": "live",
     }
@@ -181,12 +225,19 @@ def write_holdings_cache() -> dict:
     if existing and isinstance(existing.get("holdings"), dict):
         for key, entry in data["holdings"].items():
             if entry.get("return") is not None:
+                previous = existing["holdings"].get(key)
+                if previous and isinstance(previous.get("return"), (int, float)):
+                    if entry.get("dailyReturn") is None and isinstance(previous.get("dailyReturn"), (int, float)):
+                        entry["dailyReturn"] = previous["dailyReturn"]
+                        if entry.get("priorClose") is None and previous.get("priorClose") is not None:
+                            entry["priorClose"] = previous["priorClose"]
                 continue
             previous = existing["holdings"].get(key)
             if previous and isinstance(previous.get("return"), (int, float)):
                 data["holdings"][key] = previous
 
     HOLDINGS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    data["portfolioDailyReturn"] = compute_portfolio_daily_return(data["holdings"])
     HOLDINGS_CACHE_PATH.write_text(json.dumps(data), encoding="utf-8")
     return data
 

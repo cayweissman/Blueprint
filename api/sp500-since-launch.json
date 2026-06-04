@@ -1,1 +1,1 @@
-{"symbol": "^GSPC", "launchDate": "2026-01-20", "startDate": "2026-01-20", "endDate": "2026-06-03", "startClose": 6796.8599, "endClose": 7553.6802, "return": 11.1349, "updatedAt": "2026-06-04T04:54:46.926298+00:00", "source": "live", "sp500Return": 11.1349}
+{"symbol": "^GSPC", "launchDate": "2026-01-20", "startDate": "2026-01-20", "endDate": "2026-06-03", "startClose": 6796.8599, "endClose": 7553.6802, "priorClose": 7609.7798, "return": 11.1349, "dailyReturn": -0.7372, "updatedAt": "2026-06-04T05:13:24.649292+00:00", "source": "live", "sp500Return": 11.1349}

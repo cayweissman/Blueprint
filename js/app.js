@@ -408,6 +408,7 @@ function getPortfolioHoldingBySlug(slug) {
     alpha: getCompanyAlphaVsSp500(holding.key),
     startClose: live?.startClose ?? null,
     endClose: live?.endClose ?? null,
+    dailyReturnPct: getDailyReturnFromEntry(live),
     thesisParagraphs: thesis.paragraphs || [],
   };
 }
@@ -496,6 +497,7 @@ let benchmarkRefreshInterval = null;
 
 let companyReturnsState = {
   holdings: {},
+  portfolioDailyReturn: null,
   loading: false,
   error: null,
   asOf: null,
@@ -576,8 +578,45 @@ function getCompanyReturn(companyKey) {
   return companyReturnsState.holdings[companyKey]?.return ?? null;
 }
 
+function readNumericMetric(value) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
+function getDailyReturnFromEntry(entry) {
+  if (!entry) return null;
+  const dailyReturn = readNumericMetric(entry.dailyReturn);
+  if (dailyReturn != null) return dailyReturn;
+  const priorClose = readNumericMetric(entry.priorClose);
+  const endClose = readNumericMetric(entry.endClose);
+  if (priorClose != null && endClose != null && priorClose !== 0) {
+    return ((endClose / priorClose) - 1) * 100;
+  }
+  return null;
+}
+
+function computePortfolioDailyReturnFromHoldings(holdings) {
+  if (!holdings || typeof holdings !== "object") return null;
+
+  let total = 0;
+  let hasAny = false;
+
+  for (const holding of PORTFOLIO_HOLDINGS) {
+    const dailyReturn = getDailyReturnFromEntry(holdings[holding.key]);
+    if (dailyReturn == null) continue;
+    hasAny = true;
+    total += (getHoldingAllocation(holding.key) * dailyReturn) / 100;
+  }
+
+  return hasAny ? total : null;
+}
+
 function getCompanyDailyReturn(companyKey) {
-  return companyReturnsState.holdings[companyKey]?.dailyReturn ?? null;
+  return getDailyReturnFromEntry(companyReturnsState.holdings[companyKey]);
 }
 
 function getCompanyWeightedReturn(companyKey) {
@@ -605,15 +644,9 @@ function getWeightedPortfolioReturn() {
 }
 
 function getWeightedPortfolioDailyReturn() {
-  let total = 0;
-
-  for (const holding of PORTFOLIO_HOLDINGS) {
-    const weighted = getCompanyWeightedDailyReturn(holding.key);
-    if (weighted == null) return null;
-    total += weighted;
-  }
-
-  return total;
+  const cached = readNumericMetric(companyReturnsState.portfolioDailyReturn);
+  if (cached != null) return cached;
+  return computePortfolioDailyReturnFromHoldings(companyReturnsState.holdings);
 }
 
 function getHeroSinceInceptionReturn() {
@@ -700,6 +733,7 @@ function getPortfolioHoldingsRows() {
     const meta = companyHoldingsMeta[holding.key] || { ticker: "—", category: "—" };
     const live = companyReturnsState.holdings[holding.key];
     const returnPct = live?.return ?? null;
+    const dailyReturnPct = getDailyReturnFromEntry(live);
     const alpha = getCompanyAlphaVsSp500(holding.key);
     const allocation = getHoldingAllocation(holding.key);
     const contribution = returnPct != null ? (allocation * returnPct) / 100 : null;
@@ -710,6 +744,7 @@ function getPortfolioHoldingsRows() {
       ticker: live?.symbol ?? meta.ticker,
       category: live?.category ?? meta.category,
       allocation,
+      dailyReturnPct,
       returnPct,
       alpha,
       contribution,
@@ -728,7 +763,14 @@ function updatePortfolioPageDisplays() {
   const loading = companyReturnsState.loading || benchmarkState.loading;
   const rows = getPortfolioHoldingsRows();
   const weighted = getWeightedPortfolioReturn();
+  const weightedDaily = getWeightedPortfolioDailyReturn();
   const alpha = getHeroAlphaVsSp500();
+
+  const summaryDaily = page.querySelector("[data-portfolio-summary-daily] .metric-value");
+  setAnimatedPercent(summaryDaily, weightedDaily, {
+    loading,
+    className: `metric-value ${weightedDaily == null ? (loading ? "benchmark-pending" : "") : valueClass(weightedDaily)}`.trim(),
+  });
 
   const summaryReturn = page.querySelector("[data-portfolio-summary-return] .metric-value");
   setAnimatedPercent(summaryReturn, weighted, {
@@ -743,9 +785,9 @@ function updatePortfolioPageDisplays() {
   });
 
   rows.forEach((row) => {
-    const setMetricCell = (selector, value, className = "", format = formatPercentPrecise) => {
+    const setMetricCell = (selector, value, className = "", format = formatPercentPrecise, immediate = false) => {
       page.querySelectorAll(`[${selector}="${row.key}"]`).forEach((element) => {
-        setAnimatedPercent(element, value, { loading, className, format });
+        setAnimatedPercent(element, value, { loading, className, format, immediate });
       });
     };
 
@@ -763,14 +805,16 @@ function updatePortfolioPageDisplays() {
       formatAllocation,
     );
     setMetricCell(
+      "data-portfolio-daily",
+      row.dailyReturnPct,
+      `portfolio-daily ${companyReturnValueClass(row.dailyReturnPct)}`.trim(),
+      formatPercentPrecise,
+      true,
+    );
+    setMetricCell(
       "data-portfolio-return",
       row.returnPct,
       `portfolio-return ${companyReturnValueClass(row.returnPct)}`.trim(),
-    );
-    setMetricCell(
-      "data-portfolio-alpha",
-      row.alpha,
-      `portfolio-alpha ${benchmarkValueClass(row.alpha)}`.trim(),
     );
     setMetricCell(
       "data-portfolio-contribution",
@@ -892,12 +936,23 @@ function updateCompanyReturnDisplays() {
     });
   });
 
+  app.querySelectorAll("[data-holding-daily-return]").forEach((element) => {
+    const key = element.dataset.holdingDailyReturn;
+    const dailyReturn = key ? getCompanyDailyReturn(key) : null;
+    setAnimatedPercent(element, dailyReturn, {
+      loading,
+      className: `hero-return company-return ${companyReturnValueClass(dailyReturn)}`.trim(),
+      wind: true,
+    });
+  });
+
   app.querySelectorAll("[data-holding-allocation]").forEach((element) => {
     const key = element.dataset.holdingAllocation;
     const allocation = key ? getHoldingAllocation(key) : null;
+    const inStatCard = Boolean(element.closest(".stat-card"));
     setAnimatedPercent(element, allocation, {
-      className: "hero-return",
-      wind: true,
+      className: inStatCard ? "metric-value" : "hero-return",
+      wind: !inStatCard,
       format: formatAllocation,
     });
   });
@@ -944,8 +999,13 @@ async function fetchLiveCompanyReturns() {
 
       const data = await response.json();
       if (data.holdings && typeof data.holdings === "object") {
+        const portfolioDailyReturn =
+          readNumericMetric(data.portfolioDailyReturn)
+          ?? computePortfolioDailyReturnFromHoldings(data.holdings);
+
         return {
           holdings: data.holdings,
+          portfolioDailyReturn,
           asOf: data.updatedAt || null,
         };
       }
@@ -971,6 +1031,7 @@ async function refreshLiveCompanyReturns() {
       const data = await fetchLiveCompanyReturns();
       companyReturnsState = {
         holdings: data.holdings,
+        portfolioDailyReturn: data.portfolioDailyReturn ?? null,
         loading: false,
         error: null,
         asOf: data.asOf || null,
@@ -978,6 +1039,7 @@ async function refreshLiveCompanyReturns() {
     } catch (error) {
       companyReturnsState = {
         holdings: companyReturnsState.holdings,
+        portfolioDailyReturn: companyReturnsState.portfolioDailyReturn,
         loading: false,
         error: error instanceof Error ? error.message : "Returns unavailable",
         asOf: companyReturnsState.asOf,
@@ -1264,17 +1326,34 @@ function renderMetricCard(label, value, className = "", cardAttrs = "", hint = "
   `;
 }
 
-function renderHomePrimaryMetrics(returnMarkup, allocationWeight, holdingKey = "") {
+function renderHomePrimaryMetrics(returnMarkup, holdingKey = "", options = {}) {
+  const { includeDaily = false } = options;
+  const parts = [];
+
+  if (includeDaily) {
+    const dailyReturn = getDailyReturnFromEntry(companyReturnsState.holdings[holdingKey]);
+    parts.push(`
+      <div>
+        <div class="muted">Today's return</div>
+        <div
+          class="hero-return company-return ${companyReturnValueClass(dailyReturn)}"
+          data-holding-daily-return="${escapeHtml(holdingKey)}"
+          aria-live="polite"
+        >${escapeHtml(formatCompanyReturnPercent(dailyReturn))}</div>
+      </div>
+    `);
+  }
+
+  parts.push(`
+    <div>
+      <div class="muted">Since inception</div>
+      ${returnMarkup}
+    </div>
+  `);
+
   return `
     <div class="home-primary-metrics">
-      <div>
-        <div class="muted">Allocation</div>
-        <div class="hero-return"${holdingKey ? ` data-holding-allocation="${escapeHtml(holdingKey)}"` : ""}>${escapeHtml(formatAllocation(allocationWeight))}</div>
-      </div>
-      <div>
-        <div class="muted">Since inception</div>
-        ${returnMarkup}
-      </div>
+      ${parts.join("")}
     </div>
   `;
 }
@@ -1392,7 +1471,7 @@ function renderHomePage() {
           <div class="home-snapshot">
             <div class="home-hero-returns">
               <div>
-                <div class="muted">Today&rsquo;s return</div>
+                <div class="muted">Today's return</div>
                 <div
                   class="hero-return benchmark-pending"
                   data-hero-daily-return
@@ -1438,10 +1517,14 @@ function renderHomePage() {
                       aria-live="polite"
                     >Loading…</div>
                   `,
-                    getHoldingAllocation(company.key),
                     company.key,
+                    { includeDaily: true },
                   )}
                   <div class="snapshot-grid">
+                    <div class="stat-card">
+                      <div class="stat-label">Allocation</div>
+                      <div class="metric-value" data-holding-allocation="${escapeHtml(company.key)}">${escapeHtml(formatAllocation(getHoldingAllocation(company.key)))}</div>
+                    </div>
                     ${renderMetricCard("Ticker", meta.ticker)}
                     ${renderMetricCard("vs S&P", "Loading…", "benchmark-pending", `data-company-alpha="${escapeHtml(company.key)}"`)}
                   </div>
@@ -1471,10 +1554,10 @@ function renderPortfolioListRow(row) {
       </td>
       <td><span class="tag">${escapeHtml(row.ticker)}</span></td>
       <td data-portfolio-allocation="${escapeHtml(row.key)}" class="portfolio-allocation">${escapeHtml(formatAllocation(row.allocation))}</td>
+      <td data-portfolio-daily="${escapeHtml(row.key)}" class="portfolio-daily ${companyReturnValueClass(row.dailyReturnPct)}">${formatCompanyReturnPercent(row.dailyReturnPct)}</td>
       <td data-portfolio-return="${escapeHtml(row.key)}" class="portfolio-return ${companyReturnValueClass(row.returnPct)}">${formatCompanyReturnPercent(row.returnPct)}</td>
       <td data-portfolio-start="${escapeHtml(row.key)}">${row.startClose != null ? formatPrice(row.startClose) : loading ? "Loading…" : "—"}</td>
       <td data-portfolio-end="${escapeHtml(row.key)}" class="portfolio-end ${companyReturnValueClass(row.returnPct)}">${row.endClose != null ? formatPrice(row.endClose) : loading ? "Loading…" : "—"}</td>
-      <td data-portfolio-alpha="${escapeHtml(row.key)}" class="portfolio-alpha ${benchmarkValueClass(row.alpha)}">${loading && row.alpha == null ? "Loading…" : formatLiveBenchmarkPercent(row.alpha)}</td>
       <td data-portfolio-contribution="${escapeHtml(row.key)}" class="portfolio-contribution ${row.contribution == null ? (loading ? "benchmark-pending" : "") : valueClass(row.contribution)}">${row.contribution == null ? (loading ? "Loading…" : "—") : formatPercentPrecise(row.contribution)}</td>
       <td><a href="/portfolio/${escapeHtml(row.ticker)}" data-link class="public-soft-link portfolio-thesis-link">See Thesis</a></td>
     </tr>
@@ -1498,6 +1581,10 @@ function renderPortfolioCard(row) {
           <dd data-portfolio-allocation="${escapeHtml(row.key)}" class="portfolio-allocation">${escapeHtml(formatAllocation(row.allocation))}</dd>
         </div>
         <div>
+          <dt class="stat-label">Today's return</dt>
+          <dd data-portfolio-daily="${escapeHtml(row.key)}" class="portfolio-daily ${companyReturnValueClass(row.dailyReturnPct)}">${formatCompanyReturnPercent(row.dailyReturnPct)}</dd>
+        </div>
+        <div>
           <dt class="stat-label">Since inception</dt>
           <dd data-portfolio-return="${escapeHtml(row.key)}" class="portfolio-return ${companyReturnValueClass(row.returnPct)}">${formatCompanyReturnPercent(row.returnPct)}</dd>
         </div>
@@ -1508,10 +1595,6 @@ function renderPortfolioCard(row) {
         <div>
           <dt class="stat-label">Latest</dt>
           <dd data-portfolio-end="${escapeHtml(row.key)}" class="portfolio-end ${companyReturnValueClass(row.returnPct)}">${row.endClose != null ? formatPrice(row.endClose) : loading ? "Loading…" : "—"}</dd>
-        </div>
-        <div>
-          <dt class="stat-label">Vs S&amp;P</dt>
-          <dd data-portfolio-alpha="${escapeHtml(row.key)}" class="portfolio-alpha ${benchmarkValueClass(row.alpha)}">${loading && row.alpha == null ? "Loading…" : formatLiveBenchmarkPercent(row.alpha)}</dd>
         </div>
         <div>
           <dt class="stat-label">Contribution</dt>
@@ -1539,7 +1622,8 @@ function renderPortfolioPage() {
 
         <div class="stats-grid portfolio-summary">
           ${renderMetricCard("Holdings", String(rows.length), "", 'data-portfolio-summary-count=""')}
-          ${renderMetricCard("Portfolio return", "Loading…", "benchmark-pending", 'data-portfolio-summary-return=""')}
+          ${renderMetricCard("Today's return", "Loading…", "benchmark-pending", 'data-portfolio-summary-daily=""')}
+          ${renderMetricCard("Since inception", "Loading…", "benchmark-pending", 'data-portfolio-summary-return=""')}
           ${renderMetricCard("Vs S&P", "Loading…", "benchmark-pending", 'data-portfolio-summary-alpha=""')}
         </div>
 
@@ -1551,10 +1635,10 @@ function renderPortfolioPage() {
                   <th>Company</th>
                   <th>Ticker</th>
                   <th>Allocation</th>
+                  <th>Today's return</th>
                   <th>Since inception</th>
                   <th>Inception</th>
                   <th>Latest</th>
-                  <th>Vs S&amp;P</th>
                 <th>Contribution</th>
                 <th>Thesis</th>
               </tr>
@@ -1610,6 +1694,12 @@ function updateHoldingDetailPageDisplays() {
     loading,
     className: `metric-value portfolio-contribution ${holding.contribution == null ? (loading ? "benchmark-pending" : "") : valueClass(holding.contribution)}`.trim(),
   });
+
+  setAnimatedPercent(page.querySelector("[data-holding-snapshot-allocation] .metric-value"), holding.allocation, {
+    loading,
+    className: "metric-value",
+    format: formatAllocation,
+  });
 }
 
 function renderHoldingDetailPage(ticker) {
@@ -1641,11 +1731,16 @@ function renderHoldingDetailPage(ticker) {
                 aria-live="polite"
               >${escapeHtml(formatCompanyReturnPercent(holding.returnPct))}</div>
             `,
-              holding.allocation,
               holding.key,
+              { includeDaily: true },
             )}
             <div class="snapshot-grid">
-              ${renderMetricCard("Category", holding.category)}
+              ${renderMetricCard(
+                "Allocation",
+                formatAllocation(holding.allocation),
+                "",
+                'data-holding-snapshot-allocation=""',
+              )}
               ${renderMetricCard("Ticker", holding.ticker)}
               ${renderMetricCard(
                 "vs S&P",
@@ -2389,6 +2484,10 @@ function queuePercentAnimation(element, value, { wind = false, format = formatPe
 
   requestAnimationFrame(() => {
     if (!element.isConnected || !pendingPercentByElement.has(element)) return;
+    if (element.matches("[data-hero-daily-return], [data-hero-since-inception]")) {
+      playPendingPercentAnimation(element);
+      return;
+    }
     getPercentObserver(getPercentScrollRoot(element)).observe(element);
   });
 }
@@ -2399,6 +2498,7 @@ function setAnimatedPercent(element, value, options = {}) {
     className = element?.className || "",
     wind = null,
     format = formatPercentPrecise,
+    immediate = false,
   } = options;
 
   if (!element) return;
@@ -2420,6 +2520,21 @@ function setAnimatedPercent(element, value, options = {}) {
   }
 
   if (className) element.className = className.trim();
+
+  if (immediate || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    if (element.__percentAnimCleanup) {
+      element.__percentAnimCleanup();
+      element.__percentAnimCleanup = null;
+    }
+    unobservePercentElement(element);
+    pendingPercentByElement.delete(element);
+    element.textContent = format(value);
+    element.dataset.percentAnimated = String(value);
+    element.dataset.returnTarget = String(value);
+    element.classList.remove("hero-return--counting", "metric-value--counting");
+    return;
+  }
+
   element.dataset.returnTarget = String(value);
   queuePercentAnimation(element, value, { wind: useWind, format });
 }

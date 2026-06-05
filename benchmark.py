@@ -35,23 +35,28 @@ HOLDINGS = [
     {"key": "tempus", "symbol": "TEM", "name": "Tempus", "category": "Precision medicine"},
 ]
 
+PORTFOLIO_ALLOCATION_WEIGHTS = [
+    11.97,
+    11.83,
+    10.64,
+    9.47,
+    8.36,
+    7.29,
+    6.74,
+    5.91,
+    5.18,
+    4.67,
+    4.13,
+    3.68,
+    3.24,
+    2.86,
+    2.41,
+    1.62,
+]
+
 PORTFOLIO_ALLOCATIONS = {
-    "kratos": 12.5,
-    "avav": 2.2,
-    "symbotic": 2.2,
-    "nebius": 12.5,
-    "arm": 2.2,
-    "amazon": 2.2,
-    "oklo": 10.0,
-    "palantir": 12.0,
-    "crispr": 9.5,
-    "tesla": 7.0,
-    "cloudflare": 2.2,
-    "xenergy": 6.5,
-    "ionq": 6.5,
-    "aurora": 5.0,
-    "ginkgo": 5.0,
-    "tempus": 2.5,
+    holding["key"]: PORTFOLIO_ALLOCATION_WEIGHTS[index]
+    for index, holding in enumerate(HOLDINGS)
 }
 
 

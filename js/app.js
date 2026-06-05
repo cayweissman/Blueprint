@@ -1,4 +1,4 @@
-import { holdingTheses } from "./holding-theses.js?v=20260604-55";
+import { holdingTheses } from "./holding-theses.js?v=20260605-73";
 import { aboutContent, principlesContent } from "./institutional-content.js";
 import { getSiteBase, sitePath } from "./site-path.js";
 
@@ -273,24 +273,13 @@ const PORTFOLIO_HOLDINGS_ORDER = [
   "tempus",
 ];
 
-const PORTFOLIO_ALLOCATIONS = {
-  kratos: 12.5,
-  avav: 2.2,
-  symbotic: 2.2,
-  nebius: 12.5,
-  arm: 2.2,
-  amazon: 2.2,
-  oklo: 10.0,
-  palantir: 12.0,
-  crispr: 9.5,
-  tesla: 7.0,
-  cloudflare: 2.2,
-  xenergy: 6.5,
-  ionq: 6.5,
-  aurora: 5.0,
-  ginkgo: 5.0,
-  tempus: 2.5,
-};
+const PORTFOLIO_ALLOCATION_WEIGHTS = [
+  11.97, 11.83, 10.64, 9.47, 8.36, 7.29, 6.74, 5.91, 5.18, 4.67, 4.13, 3.68, 3.24, 2.86, 2.41, 1.62,
+];
+
+const PORTFOLIO_ALLOCATIONS = Object.fromEntries(
+  PORTFOLIO_HOLDINGS_ORDER.map((key, index) => [key, PORTFOLIO_ALLOCATION_WEIGHTS[index] ?? 0]),
+);
 
 const PORTFOLIO_HOLDINGS = PORTFOLIO_HOLDINGS_ORDER.map((key) => ({
   key,
@@ -514,7 +503,7 @@ let companyReturnsFetchPromise = null;
 let companyReturnsRefreshInterval = null;
 
 function formatAllocation(value) {
-  return `${value.toFixed(1)}%`;
+  return `${value.toFixed(2)}%`;
 }
 
 function formatDate(value) {

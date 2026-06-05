@@ -3176,6 +3176,19 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
     pointer-events: auto;
   }
 
+  .public-header .brand-mark {
+    min-height: 2.75rem;
+    min-width: 2.75rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    padding: 0.25rem;
+  }
+
+  .brand-mark-image {
+    height: 2.25rem;
+    width: 2.25rem;
+  }
+
   .primary-nav {
     position: fixed;
     inset: 0;

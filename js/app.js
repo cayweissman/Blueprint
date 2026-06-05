@@ -254,14 +254,18 @@ const HOLDING_EYEBROWS = {
   xenergy: "X-Energy",
 };
 
-const VISIBLE_PORTFOLIO_KEYS = [
+const PORTFOLIO_HOLDINGS_ORDER = [
   "kratos",
+  "avav",
+  "symbotic",
   "nebius",
-  "palantir",
-  "robinhood",
+  "arm",
+  "amazon",
   "oklo",
+  "palantir",
   "crispr",
   "tesla",
+  "cloudflare",
   "xenergy",
   "ionq",
   "aurora",
@@ -269,22 +273,18 @@ const VISIBLE_PORTFOLIO_KEYS = [
   "tempus",
 ];
 
-const HIDDEN_PORTFOLIO_KEYS = new Set([
-  "avav",
-  "amazon",
-  "arm",
-  "cloudflare",
-  "symbotic",
-]);
-
 const PORTFOLIO_ALLOCATIONS = {
   kratos: 12.5,
+  avav: 2.2,
+  symbotic: 2.2,
   nebius: 12.5,
-  palantir: 12.0,
-  robinhood: 11.0,
+  arm: 2.2,
+  amazon: 2.2,
   oklo: 10.0,
+  palantir: 12.0,
   crispr: 9.5,
   tesla: 7.0,
+  cloudflare: 2.2,
   xenergy: 6.5,
   ionq: 6.5,
   aurora: 5.0,
@@ -292,20 +292,10 @@ const PORTFOLIO_ALLOCATIONS = {
   tempus: 2.5,
 };
 
-const VISIBLE_PORTFOLIO_ORDER = [...VISIBLE_PORTFOLIO_KEYS].sort((a, b) => {
-  const byWeight = (PORTFOLIO_ALLOCATIONS[b] ?? 0) - (PORTFOLIO_ALLOCATIONS[a] ?? 0);
-  if (byWeight !== 0) return byWeight;
-  return VISIBLE_PORTFOLIO_KEYS.indexOf(a) - VISIBLE_PORTFOLIO_KEYS.indexOf(b);
-});
-
-const ALL_PORTFOLIO_HOLDINGS = [
-  ...VISIBLE_PORTFOLIO_ORDER.map((key) => ({ key, eyebrow: HOLDING_EYEBROWS[key] })),
-  ...Object.keys(HOLDING_EYEBROWS)
-    .filter((key) => !VISIBLE_PORTFOLIO_ORDER.includes(key))
-    .map((key) => ({ key, eyebrow: HOLDING_EYEBROWS[key] })),
-];
-
-const PORTFOLIO_HOLDINGS = ALL_PORTFOLIO_HOLDINGS.filter((holding) => !HIDDEN_PORTFOLIO_KEYS.has(holding.key));
+const PORTFOLIO_HOLDINGS = PORTFOLIO_HOLDINGS_ORDER.map((key) => ({
+  key,
+  eyebrow: HOLDING_EYEBROWS[key],
+}));
 
 const sectionVideoSequence = PORTFOLIO_HOLDINGS.map((holding) => holding.key);
 const HOME_COMPANY_BACKGROUNDS_ENABLED = false;

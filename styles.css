@@ -3644,6 +3644,17 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
   }
 }
 
+/* Company backgrounds hidden for now */
+.page-home .section-company .section-media,
+.page-home .section-company .section-scrim,
+.page-home .section-company .section-source {
+  display: none !important;
+}
+
+.page-home .section-company {
+  background: #03060a;
+}
+
 .page-home .section-media,
 .page-home .section[data-media-type="animation"] .section-media,
 .page-home .section[data-media-type="site-asset-animation"] .section-media,

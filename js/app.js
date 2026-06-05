@@ -308,6 +308,7 @@ const ALL_PORTFOLIO_HOLDINGS = [
 const PORTFOLIO_HOLDINGS = ALL_PORTFOLIO_HOLDINGS.filter((holding) => !HIDDEN_PORTFOLIO_KEYS.has(holding.key));
 
 const sectionVideoSequence = PORTFOLIO_HOLDINGS.map((holding) => holding.key);
+const HOME_COMPANY_BACKGROUNDS_ENABLED = false;
 
 const FUND_LAUNCH_LABEL = "01/20/25";
 const HOLDINGS_COUNT_DEFAULT = PORTFOLIO_HOLDINGS.length;
@@ -3028,7 +3029,7 @@ function setupHomePageExperience() {
     section.dataset.backdrop = videoKey;
     section.dataset.mediaType = video.type;
 
-    if (isMobileLayout()) return;
+    if (!HOME_COMPANY_BACKGROUNDS_ENABLED || isMobileLayout()) return;
 
     const mediaMarkup =
       video.type === "tempus-orb"

@@ -1,8 +1,9 @@
-import { holdingTheses } from "./holding-theses.js?v=20260605-73";
+import { holdingTheses } from "./holding-theses.js?v=20260605-75";
 import { aboutContent, principlesContent } from "./institutional-content.js";
 import { getSiteBase, sitePath } from "./site-path.js";
 
 const STORAGE_KEY = "blueprint-mvp-store-raw";
+const STORE_SCHEMA_VERSION = "20260605-16";
 const AUTH_KEY = "blueprint-mvp-admin-auth";
 
 const ADMIN_CREDENTIALS = {
@@ -379,7 +380,22 @@ function normalizeStorePositions(data) {
   return data;
 }
 
+function normalizeStore(data) {
+  const normalized = normalizeStorePositions({ ...data });
+
+  if (Array.isArray(normalized.performanceSnapshots)) {
+    normalized.performanceSnapshots = normalized.performanceSnapshots.map((snapshot) => ({
+      ...snapshot,
+      holdingsCount: HOLDINGS_COUNT_DEFAULT,
+    }));
+  }
+
+  normalized.storeSchemaVersion = STORE_SCHEMA_VERSION;
+  return normalized;
+}
+
 seedData.positions = buildSeedPositions();
+seedData.storeSchemaVersion = STORE_SCHEMA_VERSION;
 
 function renderHoldingThesisParagraphs(paragraphs) {
   if (!paragraphs?.length) {
@@ -434,20 +450,19 @@ function clone(value) {
 }
 
 function loadStore() {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) {
-    const initial = normalizeStorePositions(clone(seedData));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
-    return initial;
+  let parsed = null;
+
+  if (localStorage.getItem(STORAGE_KEY)) {
+    try {
+      parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    } catch (error) {
+      parsed = null;
+    }
   }
 
-  try {
-    return normalizeStorePositions(JSON.parse(stored));
-  } catch (error) {
-    const initial = normalizeStorePositions(clone(seedData));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
-    return initial;
-  }
+  const normalized = normalizeStore(parsed ? { ...clone(seedData), ...parsed } : clone(seedData));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+  return normalized;
 }
 
 let store = loadStore();
@@ -577,10 +592,6 @@ function getEmptySnapshot() {
 }
 
 function getHoldingsCount() {
-  const fromPositions = getCurrentPositions().length;
-  if (fromPositions > 0) return fromPositions;
-  const snapshot = getLatestSnapshot();
-  if (snapshot?.holdingsCount > 0) return snapshot.holdingsCount;
   return HOLDINGS_COUNT_DEFAULT;
 }
 

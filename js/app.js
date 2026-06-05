@@ -345,15 +345,35 @@ function normalizeStorePositions(data) {
   const defaults = buildSeedPositions();
   const defaultsByTicker = new Map(defaults.map((position) => [String(position.ticker || "").toUpperCase(), position]));
 
-  if (!data.positions?.length) {
+  const existingPositions = Array.isArray(data.positions) ? data.positions : [];
+  if (!existingPositions.length) {
     data.positions = defaults;
     return data;
   }
 
-  data.positions = data.positions.map((position) => {
-    const match = defaultsByTicker.get(String(position.ticker || "").toUpperCase());
-    if (!match) return position;
-    return { ...position, weight: match.weight, companyName: match.companyName };
+  // Merge: older localStorage may only contain a subset of positions.
+  // We always return positions in the full default order, preserving user stats where possible.
+  const existingByTicker = new Map();
+  for (const position of existingPositions) {
+    const key = String(position?.ticker || "").toUpperCase();
+    if (!key) continue;
+    existingByTicker.set(key, position);
+  }
+
+  data.positions = defaults.map((match) => {
+    const key = String(match?.ticker || "").toUpperCase();
+    const existing = existingByTicker.get(key);
+    if (!existing) return match;
+
+    const merged = { ...match, ...existing };
+    // Force canonical values from the current defaults.
+    merged.weight = match.weight;
+    merged.companyName = match.companyName;
+    merged.ticker = match.ticker;
+    merged.id = match.id;
+    merged.thesisSlug = match.thesisSlug;
+    merged.status = match.status;
+    return merged;
   });
 
   return data;

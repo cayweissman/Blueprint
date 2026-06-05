@@ -3497,6 +3497,12 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
     font-size: 2rem;
   }
 
+  .page-portfolio .portfolio-summary .metric-value {
+    font-size: clamp(1.1rem, 5vw, 1.35rem);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+  }
+
   .public-page:not(.page-home) h1 {
     font-size: clamp(2.35rem, 12vw, 3.75rem);
   }

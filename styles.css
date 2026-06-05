@@ -1783,6 +1783,20 @@ body.theme-public[data-page]:not([data-page="home"]) .transparent-motion-video {
   padding-top: var(--public-content-top);
 }
 
+.site-shell-public .page-home .section {
+  padding:
+    var(--public-content-top)
+    var(--public-content-inline-end)
+    var(--public-content-top)
+    var(--public-content-inline-start);
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.site-shell-public .page-home .section-hero {
+  padding-top: var(--public-content-top);
+}
+
 .page-home .section-hero {
   position: relative;
   overflow: hidden;
@@ -1849,7 +1863,7 @@ body.theme-public[data-page]:not([data-page="home"]) .transparent-motion-video {
 }
 
 .site-shell-public .page-home .section-hero.section-no-media {
-  justify-content: space-between;
+  justify-content: center;
   align-items: flex-start;
 }
 
@@ -1857,7 +1871,7 @@ body.theme-public[data-page]:not([data-page="home"]) .transparent-motion-video {
 .page-home .section-company .home-overview {
   width: 100%;
   max-width: 1200px;
-  margin: auto 0;
+  margin: 0;
 }
 
 .hero-positions-cta {

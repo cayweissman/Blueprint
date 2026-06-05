@@ -180,7 +180,7 @@ const backgroundVideos = {
     src: "/assets/nebius-green3-inverted.mp4?v=1",
   },
   avav: {
-    company: "AeroVironment",
+    company: "AV",
     descriptor: "Autonomous defense systems",
     type: "simple-animation",
   },
@@ -235,7 +235,7 @@ const backgroundVideos = {
 };
 
 const HOLDING_EYEBROWS = {
-  avav: "AeroVironment",
+  avav: "AV",
   amazon: "Amazon",
   arm: "Arm",
   aurora: "Aurora",

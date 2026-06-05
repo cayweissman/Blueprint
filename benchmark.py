@@ -18,7 +18,7 @@ HOLDINGS_CACHE_PATH = ROOT / "api" / "holdings-since-launch.json"
 
 HOLDINGS = [
     {"key": "kratos", "symbol": "KTOS", "name": "Kratos", "category": "Defense technology"},
-    {"key": "avav", "symbol": "AVAV", "name": "AeroVironment", "category": "Defense drones"},
+    {"key": "avav", "symbol": "AVAV", "name": "AV", "category": "Defense drones"},
     {"key": "symbotic", "symbol": "SYM", "name": "Symbotic", "category": "Warehouse automation"},
     {"key": "nebius", "symbol": "NBIS", "name": "Nebius", "category": "AI infrastructure"},
     {"key": "arm", "symbol": "ARM", "name": "Arm", "category": "Semiconductors"},

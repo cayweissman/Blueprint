@@ -1414,7 +1414,16 @@ function renderHeader(route) {
     <header class="site-header public-header">
       <div class="header-row">
         <div class="brand-block">
-          <a href="/" class="brand-mark" data-link>Blueprint</a>
+          <a href="/" class="brand-mark" data-link aria-label="Blueprint home">
+            <img
+              src="${sitePath("/assets/brand-mark.png?v=12")}"
+              alt=""
+              class="brand-mark-image"
+              width="500"
+              height="500"
+              decoding="async"
+            />
+          </a>
         </div>
         <button
           type="button"

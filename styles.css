@@ -395,11 +395,7 @@ pre {
 
 .brand-mark {
   display: inline-block;
-  font-size: 0.95rem;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  line-height: 1;
-  text-transform: uppercase;
+  line-height: 0;
 }
 
 .public-header .brand-mark,
@@ -414,8 +410,16 @@ pre {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 2.75rem;
-  padding: 0 1rem;
+  min-height: 5.5rem;
+  min-width: 5.5rem;
+  padding: 0.35rem;
+}
+
+.brand-mark-image {
+  display: block;
+  height: 4.75rem;
+  width: 4.75rem;
+  object-fit: contain;
 }
 
 .public-header .primary-nav .nav-list {

@@ -2017,7 +2017,7 @@ body.theme-public[data-page]:not([data-page="home"]) .transparent-motion-video {
   letter-spacing: -0.02em;
 }
 
-@media (min-width: 721px) {
+@media (min-width: 1301px) {
   .page-home .section-hero .hero-title,
   .page-home .section-company .hero-title {
     font-size: clamp(3.3rem, 9vw, 8.5rem);
@@ -2026,7 +2026,7 @@ body.theme-public[data-page]:not([data-page="home"]) .transparent-motion-video {
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 1301px) {
   .page-home .home-snapshot .hero-return {
     font-size: clamp(3rem, 8vw, 7rem);
     line-height: 0.84;
@@ -2493,26 +2493,6 @@ body.theme-public[data-page]:not([data-page="home"]) .transparent-motion-video {
 
 .page-portfolio .page-header-block h1 {
   max-width: none;
-  font-size: 3.75rem;
-  line-height: 0.9;
-}
-
-.page-portfolio .metric-value {
-  font-size: 2rem;
-  line-height: 1;
-  letter-spacing: -0.02em;
-}
-
-.page-portfolio .portfolio-table td,
-.page-portfolio .portfolio-card-metrics dd,
-.page-portfolio .portfolio-company-link {
-  font-size: 0.95rem;
-}
-
-@media (max-width: 720px) {
-  .page-portfolio .page-header-block h1 {
-    font-size: clamp(2.35rem, 12vw, 3.75rem);
-  }
 }
 
 .page-portfolio .portfolio-summary .stat-label,
@@ -2960,7 +2940,7 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
   line-height: 1.65 !important;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 1300px) {
   .page-holding-thesis .pillar-grid {
     grid-template-columns: 1fr;
   }
@@ -3069,7 +3049,7 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
   border-top: 1px solid rgba(244, 247, 251, 0.12);
 }
 
-@media (max-width: 1220px) {
+@media (max-width: 1300px) {
   .page-portfolio .portfolio-section {
     padding-top: calc(var(--public-nav-top) + var(--public-header-height) + 0.85rem);
     padding-right: var(--public-content-inline-end);
@@ -3159,7 +3139,7 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
 }
 
-@media (max-width: 1220px) {
+@media (max-width: 1300px) {
   :root {
     --public-header-offset: 4rem;
     --public-nav-top: calc(1rem + var(--safe-top));
@@ -3376,7 +3356,7 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
   }
 }
 
-@media (max-width: 720px) {
+@media (max-width: 1300px) {
   :root {
     --public-header-offset: 3.75rem;
     --public-nav-top: calc(0.85rem + var(--safe-top));

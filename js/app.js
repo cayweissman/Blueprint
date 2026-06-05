@@ -1482,10 +1482,10 @@ function renderHomePage() {
         <div id="hero-vanta" class="hero-vanta" aria-hidden="true"></div>
         <div class="home-overview">
           <div class="hero-copy">
-            <h1 class="hero-title">Blueprint</h1>
+            <h2 class="hero-title">Blueprint</h2>
           </div>
           <div class="home-snapshot">
-            <div class="home-hero-returns">
+            <div class="home-primary-metrics">
               <div>
                 <div class="muted">Today's return</div>
                 <div
@@ -1618,7 +1618,7 @@ function renderPortfolioCard(row) {
         </div>
       </dl>
       <p class="portfolio-card-thesis-link">
-        <a href="/portfolio/${escapeHtml(row.ticker)}" data-link class="portfolio-thesis-link"><span class="portfolio-thesis-text">See Thesis</span><span class="portfolio-thesis-arrow" aria-hidden="true">›</span></a>
+        <a href="/portfolio/${escapeHtml(row.ticker)}" data-link class="portfolio-thesis-link">See Thesis</a>
       </p>
     </article>
   `;

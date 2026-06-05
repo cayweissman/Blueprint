@@ -1889,15 +1889,13 @@ body.theme-public[data-page]:not([data-page="home"]) .transparent-motion-video {
   background: var(--public-bg);
 }
 
-.home-primary-metrics,
-.home-hero-returns {
+.home-primary-metrics {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
 }
 
-.home-primary-metrics > div > .muted,
-.home-hero-returns > div > .muted {
+.home-primary-metrics > div > .muted {
   display: block;
   margin-bottom: 0.55rem;
 }
@@ -2000,28 +1998,52 @@ body.theme-public[data-page]:not([data-page="home"]) .transparent-motion-video {
 
 .page-home .section-hero .hero-title,
 .page-home .section-company .hero-title {
-  font-size: clamp(3.3rem, 9vw, 8.5rem);
-  line-height: 0.86;
+  margin-bottom: 0;
+  font-size: clamp(2rem, 11vw, 3rem);
+  line-height: 0.9;
+  font-weight: 700;
   text-transform: uppercase;
+  color: var(--public-text);
 }
 
 .page-home .section-hero .hero-title.hero-tagline {
   text-transform: none;
-  color: #fff;
+  color: var(--public-text);
 }
 
-.page-home .section-company .hero-title {
-  color: #fff;
+.page-home .home-snapshot .hero-return {
+  font-size: 2rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 721px) {
+  .page-home .section-hero .hero-title,
+  .page-home .section-company .hero-title {
+    font-size: clamp(3.3rem, 9vw, 8.5rem);
+    line-height: 0.86;
+    color: #fff;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-home .home-snapshot .hero-return {
+    font-size: clamp(3rem, 8vw, 7rem);
+    line-height: 0.84;
+    letter-spacing: -0.07em;
+  }
 }
 
 .page-home .page-home-scroll-cta.is-chrome-tone {
   color: var(--public-bg);
 }
 
+.page-home .section-hero .home-snapshot .muted,
 .page-home .section-company .home-snapshot .muted {
   color: var(--public-text-faint);
 }
 
+.page-home .section-hero .snapshot-grid,
 .page-home .section-company .snapshot-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -2471,6 +2493,26 @@ body.theme-public[data-page]:not([data-page="home"]) .transparent-motion-video {
 
 .page-portfolio .page-header-block h1 {
   max-width: none;
+  font-size: 3.75rem;
+  line-height: 0.9;
+}
+
+.page-portfolio .metric-value {
+  font-size: 2rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.page-portfolio .portfolio-table td,
+.page-portfolio .portfolio-card-metrics dd,
+.page-portfolio .portfolio-company-link {
+  font-size: 0.95rem;
+}
+
+@media (max-width: 720px) {
+  .page-portfolio .page-header-block h1 {
+    font-size: clamp(2.35rem, 12vw, 3.75rem);
+  }
 }
 
 .page-portfolio .portfolio-summary .stat-label,
@@ -2514,6 +2556,10 @@ body.theme-public[data-page]:not([data-page="home"]) .transparent-motion-video {
 
 .page-portfolio .portfolio-card-thesis-link {
   margin: 0.85rem 0 0;
+}
+
+.page-portfolio .portfolio-thesis-arrow {
+  display: none;
 }
 
 .public-soft-link {
@@ -3241,10 +3287,7 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
     padding-top: var(--public-content-top);
   }
 
-  .page-home .section-hero.section-no-media {
-    justify-content: center;
-  }
-
+  .page-home .section-hero .home-overview,
   .page-home .section-company .home-overview {
     width: 100%;
     gap: 0.85rem;
@@ -3364,27 +3407,76 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
       var(--public-content-inline-start);
   }
 
+  /* Home scroll: hero panel uses the same layout + type scale as stock panels */
+  .site-shell-public .page-home .section-hero,
+  .site-shell-public .page-home .section-company {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    color: #fff;
+  }
+
+  .site-shell-public .page-home .section-hero.section-no-media {
+    justify-content: center;
+    align-items: flex-start;
+  }
+
+  .site-shell-public .page-home .section-hero > .home-overview,
+  .site-shell-public .page-home .section-company > .home-overview {
+    position: relative;
+    z-index: 3;
+    pointer-events: auto;
+    gap: 0.85rem;
+  }
+
+  .page-home .home-primary-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
   .page-home .section-hero .hero-title,
   .page-home .section-company .hero-title {
     font-size: clamp(2.35rem, 12vw, 3.75rem);
     line-height: 0.9;
     margin-bottom: 0;
-  }
-
-  .page-home .section-hero .hero-return {
-    font-size: clamp(2.35rem, 14vw, 3.75rem);
-    line-height: 0.9;
-  }
-
-  .page-home .home-primary-metrics,
-  .page-home .home-hero-returns {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
+    letter-spacing: normal;
+    text-transform: uppercase;
+    color: #fff;
   }
 
   .page-home .home-snapshot {
     padding: 0.9rem;
     gap: 0.75rem;
+    color: var(--public-text);
+  }
+
+  .page-home .section-hero .home-snapshot .muted,
+  .page-home .section-company .home-snapshot .muted,
+  .page-home .home-primary-metrics > div > .muted,
+  .page-home .home-snapshot .stat-label {
+    color: var(--public-text-faint);
+  }
+
+  .page-home .home-snapshot .hero-return {
+    font-size: clamp(1.1rem, 5vw, 1.35rem);
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+  }
+
+  .page-home .home-snapshot .hero-return.positive,
+  .page-home .home-snapshot .metric-value.positive {
+    color: var(--public-positive);
+  }
+
+  .page-home .home-snapshot .hero-return.negative,
+  .page-home .home-snapshot .metric-value.negative {
+    color: var(--public-negative);
+  }
+
+  .page-home .home-snapshot .hero-return.benchmark-pending,
+  .page-home .home-snapshot .metric-value.benchmark-pending {
+    color: var(--public-text-soft);
   }
 
   .page-home .snapshot-grid {
@@ -3395,28 +3487,24 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
     grid-column: auto;
   }
 
-  .page-portfolio .portfolio-thesis-arrow {
-    display: none;
-  }
-
-  .snapshot-grid .stat-card {
+  .page-home .snapshot-grid .stat-card {
     padding: 0.75rem;
   }
 
-  .snapshot-grid .metric-value {
+  .page-home .snapshot-grid .metric-value {
     font-size: clamp(0.95rem, 4.2vw, 1.25rem);
   }
 
-  .metric-value,
-  .hero-return {
+  .public-page:not(.page-home) .metric-value,
+  .public-page:not(.page-home) .hero-return {
     font-size: 2rem;
   }
 
-  .public-page h1 {
+  .public-page:not(.page-home) h1 {
     font-size: clamp(2.35rem, 12vw, 3.75rem);
   }
 
-  .public-page h2 {
+  .public-page:not(.page-home) h2 {
     font-size: clamp(1.75rem, 9vw, 2.75rem);
   }
 
@@ -3488,28 +3576,12 @@ body.theme-public .site-shell-public .page-holding-thesis .holding-thesis-sectio
 }
 
 @media (max-width: 480px) {
-  .page-home .section-hero .hero-title,
-  .page-home .section-company .hero-title {
-    font-size: clamp(2rem, 11vw, 3rem);
-  }
-
-  .page-home .section-hero .hero-return {
-    font-size: clamp(2rem, 13vw, 3rem);
-  }
-
-  .snapshot-grid {
-    grid-template-columns: 1fr;
-  }
-
+  .page-home .section-hero .snapshot-grid,
   .page-home .section-company .snapshot-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .snapshot-grid .stat-card:last-child:nth-child(odd) {
-    grid-column: auto;
-  }
-
-  .home-overview {
+  .page-home .home-overview {
     gap: 0.75rem;
   }
 }

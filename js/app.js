@@ -291,6 +291,8 @@ const sectionVideoSequence = PORTFOLIO_HOLDINGS.map((holding) => holding.key);
 const HOME_COMPANY_BACKGROUNDS_ENABLED = false;
 
 const FUND_LAUNCH_LABEL = "01/20/25";
+const FUND_LAUNCH_DATE = "2025-01-20";
+const SP500_SYMBOL = "^GSPC";
 const HOLDINGS_COUNT_DEFAULT = PORTFOLIO_HOLDINGS.length;
 
 function getHoldingAllocation(companyKey) {
@@ -864,6 +866,204 @@ function marketDataUrl(path) {
   return `${sitePath(path)}?${params}`;
 }
 
+function utcTimestamp(dateStr) {
+  return Math.floor(Date.parse(`${dateStr}T00:00:00Z`) / 1000);
+}
+
+function formatUtcDate(timestamp) {
+  return new Date(timestamp * 1000).toISOString().slice(0, 10);
+}
+
+function roundMarket(value) {
+  return Math.round(value * 10000) / 10000;
+}
+
+function parseYahooSinceLaunch(result) {
+  const timestamps = result?.timestamp || [];
+  const closes = result?.indicators?.quote?.[0]?.close || [];
+  const pairs = [];
+
+  for (let index = 0; index < timestamps.length; index += 1) {
+    const close = closes[index];
+    if (typeof close === "number" && Number.isFinite(close)) {
+      pairs.push([timestamps[index], close]);
+    }
+  }
+
+  if (pairs.length < 2) {
+    throw new Error("Insufficient market data");
+  }
+
+  const startPair = pairs.find(([timestamp]) => formatUtcDate(timestamp) >= FUND_LAUNCH_DATE);
+  if (!startPair) {
+    throw new Error("No launch-day market data");
+  }
+
+  const endPair = pairs[pairs.length - 1];
+  const priorPair = pairs[pairs.length - 2];
+  const returnPct = (endPair[1] / startPair[1] - 1) * 100;
+  const dailyReturn = (endPair[1] / priorPair[1] - 1) * 100;
+
+  return {
+    startDate: formatUtcDate(startPair[0]),
+    endDate: formatUtcDate(endPair[0]),
+    startClose: roundMarket(startPair[1]),
+    endClose: roundMarket(endPair[1]),
+    priorClose: roundMarket(priorPair[1]),
+    return: roundMarket(returnPct),
+    dailyReturn: roundMarket(dailyReturn),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+async function fetchYahooChart(symbol) {
+  const startTs = utcTimestamp(FUND_LAUNCH_DATE) - 86400;
+  const endTs = Math.floor(Date.now() / 1000);
+  const encoded = encodeURIComponent(symbol);
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encoded}?period1=${startTs}&period2=${endTs}&interval=1d`;
+  const response = await fetchWithTimeout(url, 20000);
+  if (!response.ok) {
+    throw new Error(`Yahoo chart unavailable (${response.status})`);
+  }
+
+  const payload = await response.json();
+  const result = payload?.chart?.result?.[0];
+  if (!result) {
+    throw new Error("Yahoo chart response empty");
+  }
+
+  return result;
+}
+
+async function fetchYahooSymbolSinceLaunch(symbol) {
+  const result = await fetchYahooChart(symbol);
+  return {
+    symbol,
+    launchDate: FUND_LAUNCH_DATE,
+    ...parseYahooSinceLaunch(result),
+    source: "live",
+  };
+}
+
+async function fetchYahooHoldingEntry(holding) {
+  const meta = companyHoldingsMeta[holding.key] || { ticker: "—", category: "—" };
+  const base = {
+    key: holding.key,
+    name: holding.eyebrow,
+    category: meta.category,
+    symbol: meta.ticker,
+    launchDate: FUND_LAUNCH_DATE,
+  };
+
+  if (!meta.ticker || meta.ticker === "—") {
+    return { ...base, return: null, error: "Not publicly traded", source: "unavailable" };
+  }
+
+  try {
+    const quote = await fetchYahooSymbolSinceLaunch(meta.ticker);
+    return {
+      ...base,
+      return: quote.return,
+      dailyReturn: quote.dailyReturn,
+      startDate: quote.startDate,
+      endDate: quote.endDate,
+      startClose: quote.startClose,
+      endClose: quote.endClose,
+      priorClose: quote.priorClose,
+      updatedAt: quote.updatedAt,
+      source: "live",
+    };
+  } catch (error) {
+    return {
+      ...base,
+      return: null,
+      error: error instanceof Error ? error.message : "Returns unavailable",
+      source: "error",
+    };
+  }
+}
+
+async function mapWithConcurrency(items, limit, mapper) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex;
+      nextIndex += 1;
+      results[currentIndex] = await mapper(items[currentIndex], currentIndex);
+    }
+  }
+
+  const workerCount = Math.min(limit, items.length);
+  await Promise.all(Array.from({ length: workerCount }, () => worker()));
+  return results;
+}
+
+async function fetchYahooHoldingsSinceLaunch() {
+  const entries = await mapWithConcurrency(PORTFOLIO_HOLDINGS, 4, (holding) => fetchYahooHoldingEntry(holding));
+  const holdings = Object.fromEntries(entries.map((entry) => [entry.key, entry]));
+  const liveCount = entries.filter((entry) => entry.return != null).length;
+
+  if (!liveCount) {
+    throw new Error("Live holdings unavailable");
+  }
+
+  return {
+    holdings,
+    portfolioDailyReturn: computePortfolioDailyReturnFromHoldings(holdings),
+    asOf: new Date().toISOString(),
+    source: "live",
+  };
+}
+
+async function fetchCachedHoldingsJson() {
+  const response = await fetchWithTimeout(marketDataUrl("/api/holdings-since-launch.json"));
+  if (!response.ok) {
+    throw new Error("Holdings cache unavailable");
+  }
+
+  const data = await response.json();
+  if (!data.holdings || typeof data.holdings !== "object") {
+    throw new Error("Holdings cache invalid");
+  }
+
+  return {
+    holdings: data.holdings,
+    portfolioDailyReturn:
+      readNumericMetric(data.portfolioDailyReturn) ?? computePortfolioDailyReturnFromHoldings(data.holdings),
+    asOf: data.updatedAt || null,
+    source: "cache",
+  };
+}
+
+async function fetchCachedSp500Json() {
+  const response = await fetchWithTimeout(marketDataUrl("/api/sp500-since-launch.json"));
+  if (!response.ok) {
+    throw new Error("S&P cache unavailable");
+  }
+
+  const data = await response.json();
+  if (typeof data.sp500Return !== "number") {
+    throw new Error("S&P cache invalid");
+  }
+
+  return { sp500Return: data.sp500Return, asOf: data.endDate || data.updatedAt || null, source: "cache" };
+}
+
+function mergeHoldingsWithCache(liveHoldings, cachedHoldings = {}) {
+  const merged = { ...cachedHoldings };
+
+  for (const holding of PORTFOLIO_HOLDINGS) {
+    const live = liveHoldings[holding.key];
+    if (live?.return != null) {
+      merged[holding.key] = live;
+    }
+  }
+
+  return merged;
+}
+
 async function fetchWithTimeout(url, timeoutMs = 15000) {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
@@ -876,23 +1076,16 @@ async function fetchWithTimeout(url, timeoutMs = 15000) {
 }
 
 async function fetchLiveSp500Return() {
-  const sources = [marketDataUrl("/api/sp500-since-launch.json")];
-
-  for (const url of sources) {
-    try {
-      const response = await fetchWithTimeout(url);
-      if (!response.ok) continue;
-
-      const data = await response.json();
-      if (typeof data.sp500Return === "number") {
-        return { sp500Return: data.sp500Return, asOf: data.endDate || null };
-      }
-    } catch (_) {
-      // Try the next source.
+  try {
+    const quote = await fetchYahooSymbolSinceLaunch(SP500_SYMBOL);
+    if (typeof quote.return === "number") {
+      return { sp500Return: quote.return, asOf: quote.endDate || quote.updatedAt || null, source: "live" };
     }
+  } catch (_) {
+    // Fall back to committed cache below.
   }
 
-  throw new Error("Benchmark API unavailable");
+  return fetchCachedSp500Json();
 }
 
 async function refreshLiveBenchmark(force = false) {
@@ -1030,28 +1223,27 @@ function updateHeroMetricsDisplay() {
 }
 
 async function fetchLiveCompanyReturns() {
-  const sources = [marketDataUrl("/api/holdings-since-launch.json")];
+  const [liveResult, cacheResult] = await Promise.allSettled([
+    fetchYahooHoldingsSinceLaunch(),
+    fetchCachedHoldingsJson(),
+  ]);
 
-  for (const url of sources) {
-    try {
-      const response = await fetchWithTimeout(url);
-      if (!response.ok) continue;
+  const cached = cacheResult.status === "fulfilled" ? cacheResult.value : null;
 
-      const data = await response.json();
-      if (data.holdings && typeof data.holdings === "object") {
-        const portfolioDailyReturn =
-          readNumericMetric(data.portfolioDailyReturn)
-          ?? computePortfolioDailyReturnFromHoldings(data.holdings);
+  if (liveResult.status === "fulfilled") {
+    const live = liveResult.value;
+    const holdings = mergeHoldingsWithCache(live.holdings, cached?.holdings || {});
 
-        return {
-          holdings: data.holdings,
-          portfolioDailyReturn,
-          asOf: data.updatedAt || null,
-        };
-      }
-    } catch (_) {
-      // Try the next source.
-    }
+    return {
+      holdings,
+      portfolioDailyReturn: computePortfolioDailyReturnFromHoldings(holdings),
+      asOf: live.asOf,
+      source: cached ? "live+cache" : "live",
+    };
+  }
+
+  if (cached) {
+    return cached;
   }
 
   throw new Error("Holdings API unavailable");

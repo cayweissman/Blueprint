@@ -851,6 +851,19 @@ function updatePortfolioPageDisplays() {
   });
 }
 
+function isLocalDevHost() {
+  const host = window.location.hostname;
+  return host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0";
+}
+
+function marketDataUrl(path) {
+  const params = new URLSearchParams({ t: String(Date.now()) });
+  if (isLocalDevHost()) {
+    params.set("live", "1");
+  }
+  return `${sitePath(path)}?${params}`;
+}
+
 async function fetchWithTimeout(url, timeoutMs = 15000) {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
@@ -863,7 +876,7 @@ async function fetchWithTimeout(url, timeoutMs = 15000) {
 }
 
 async function fetchLiveSp500Return() {
-  const sources = [sitePath("/api/sp500-since-launch.json")];
+  const sources = [marketDataUrl("/api/sp500-since-launch.json")];
 
   for (const url of sources) {
     try {
@@ -882,8 +895,8 @@ async function fetchLiveSp500Return() {
   throw new Error("Benchmark API unavailable");
 }
 
-async function refreshLiveBenchmark() {
-  if (benchmarkFetchPromise) return benchmarkFetchPromise;
+async function refreshLiveBenchmark(force = false) {
+  if (!force && benchmarkFetchPromise) return benchmarkFetchPromise;
 
   const hadBenchmark = benchmarkState.sp500Return != null;
   if (!hadBenchmark) {
@@ -925,8 +938,8 @@ function cleanupLiveBenchmark() {
 
 function setupLiveBenchmark() {
   cleanupLiveBenchmark();
-  refreshLiveBenchmark();
-  benchmarkRefreshInterval = setInterval(refreshLiveBenchmark, BENCHMARK_REFRESH_MS);
+  refreshLiveBenchmark(true);
+  benchmarkRefreshInterval = setInterval(() => refreshLiveBenchmark(true), BENCHMARK_REFRESH_MS);
 }
 
 function formatCompanyReturnPercent(value) {
@@ -1017,7 +1030,7 @@ function updateHeroMetricsDisplay() {
 }
 
 async function fetchLiveCompanyReturns() {
-  const sources = [sitePath("/api/holdings-since-launch.json")];
+  const sources = [marketDataUrl("/api/holdings-since-launch.json")];
 
   for (const url of sources) {
     try {
@@ -1044,8 +1057,8 @@ async function fetchLiveCompanyReturns() {
   throw new Error("Holdings API unavailable");
 }
 
-async function refreshLiveCompanyReturns() {
-  if (companyReturnsFetchPromise) return companyReturnsFetchPromise;
+async function refreshLiveCompanyReturns(force = false) {
+  if (!force && companyReturnsFetchPromise) return companyReturnsFetchPromise;
 
   const hadHoldings = Object.keys(companyReturnsState.holdings).length > 0;
   if (!hadHoldings) {
@@ -1089,8 +1102,24 @@ function cleanupLiveCompanyReturns() {
 
 function setupLiveCompanyReturns() {
   cleanupLiveCompanyReturns();
-  refreshLiveCompanyReturns();
-  companyReturnsRefreshInterval = setInterval(refreshLiveCompanyReturns, BENCHMARK_REFRESH_MS);
+  refreshLiveCompanyReturns(true);
+  companyReturnsRefreshInterval = setInterval(() => refreshLiveCompanyReturns(true), BENCHMARK_REFRESH_MS);
+}
+
+function setupMarketDataRefreshOnFocus() {
+  if (window.__blueprintMarketFocusSetup) return;
+  window.__blueprintMarketFocusSetup = true;
+
+  const refetch = () => {
+    if (document.visibilityState && document.visibilityState !== "visible") return;
+    refreshLiveBenchmark(true);
+    refreshLiveCompanyReturns(true);
+  };
+
+  document.addEventListener("visibilitychange", refetch);
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) refetch();
+  });
 }
 
 function getCurrentPositions() {
@@ -3383,4 +3412,5 @@ app.addEventListener("submit", (event) => {
 
 window.addEventListener("popstate", render);
 
+setupMarketDataRefreshOnFocus();
 render();

@@ -1,0 +1,38 @@
+name: Refresh market data
+
+on:
+  schedule:
+    # Every 30 minutes during US market hours (Mon–Fri, ~9:30am–4:30pm ET)
+    - cron: "*/30 14-21 * * 1-5"
+    # Once after US market close (4:30pm ET)
+    - cron: "30 21 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: benchmark-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Refresh market data cache
+        run: python3 update_benchmark.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add api/holdings-since-launch.json api/sp500-since-launch.json
+          if git diff --staged --quiet; then
+            echo "No market data changes."
+            exit 0
+          fi
+          git commit -m "Refresh market data cache"
+          git push
